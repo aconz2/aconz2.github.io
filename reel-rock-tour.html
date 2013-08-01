@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<!-- saved from url=(0020)file:///tmp/106.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8"><style>html { font-size: 100%; overflow-y: scroll; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+
+body{
+  color:#444;
+  font-family:Georgia, Palatino, 'Palatino Linotype', Times, 'Times New Roman',
+              "Hiragino Sans GB", "STXihei", "微软雅黑", serif;
+  font-size:12px;
+  line-height:1.5em;
+  background:#fefefe;
+  width: 45em;
+  margin: 10px auto;
+  padding: 1em;
+  outline: 1300px solid #FAFAFA;
+}
+
+a{ color: #0645ad; text-decoration:none;}
+a:visited{ color: #0b0080; }
+a:hover{ color: #06e; }
+a:active{ color:#faa700; }
+a:focus{ outline: thin dotted; }
+a:hover, a:active{ outline: 0; }
+
+span.backtick {
+  border:1px solid #EAEAEA;
+  border-radius:3px;
+  background:#F8F8F8;
+  padding:0 3px 0 3px;
+}
+
+::-moz-selection{background:rgba(255,255,0,0.3);color:#000}
+::selection{background:rgba(255,255,0,0.3);color:#000}
+
+a::-moz-selection{background:rgba(255,255,0,0.3);color:#0645ad}
+a::selection{background:rgba(255,255,0,0.3);color:#0645ad}
+
+p{
+margin:1em 0;
+}
+
+img{
+max-width:100%;
+}
+
+h1,h2,h3,h4,h5,h6{
+font-weight:normal;
+color:#111;
+line-height:1em;
+}
+h4,h5,h6{ font-weight: bold; }
+h1{ font-size:2.5em; }
+h2{ font-size:2em; border-bottom:1px solid silver; padding-bottom: 5px; }
+h3{ font-size:1.5em; }
+h4{ font-size:1.2em; }
+h5{ font-size:1em; }
+h6{ font-size:0.9em; }
+
+blockquote{
+color:#666666;
+margin:0;
+padding-left: 3em;
+border-left: 0.5em #EEE solid;
+}
+hr { display: block; height: 2px; border: 0; border-top: 1px solid #aaa;border-bottom: 1px solid #eee; margin: 1em 0; padding: 0; }
+
+
+pre , code, kbd, samp { 
+  color: #000; 
+  font-family: monospace; 
+  font-size: 0.88em; 
+  border-radius:3px;
+  background-color: #F8F8F8;
+  border: 1px solid #CCC; 
+}
+pre { white-space: pre; white-space: pre-wrap; word-wrap: break-word; padding: 5px 12px;}
+pre code { border: 0px !important; padding: 0;}
+code { padding: 0 3px 0 3px; }
+
+b, strong { font-weight: bold; }
+
+dfn { font-style: italic; }
+
+ins { background: #ff9; color: #000; text-decoration: none; }
+
+mark { background: #ff0; color: #000; font-style: italic; font-weight: bold; }
+
+sub, sup { font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
+sup { top: -0.5em; }
+sub { bottom: -0.25em; }
+
+ul, ol { margin: 1em 0; padding: 0 0 0 2em; }
+li p:last-child { margin:0 }
+dd { margin: 0 0 0 2em; }
+
+img { border: 0; -ms-interpolation-mode: bicubic; vertical-align: middle; }
+
+table { border-collapse: collapse; border-spacing: 0; }
+td { vertical-align: top; }
+
+@media only screen and (min-width: 480px) {
+body{font-size:14px;}
+}
+
+@media only screen and (min-width: 768px) {
+body{font-size:16px;}
+}
+
+@media print {
+  * { background: transparent !important; color: black !important; filter:none !important; -ms-filter: none !important; }
+  body{font-size:12pt; max-width:100%; outline:none;}
+  a, a:visited { text-decoration: underline; }
+  hr { height: 1px; border:0; border-bottom:1px solid black; }
+  a[href]:after { content: " (" attr(href) ")"; }
+  abbr[title]:after { content: " (" attr(title) ")"; }
+  .ir a:after, a[href^="javascript:"]:after, a[href^="#"]:after { content: ""; }
+  pre, blockquote { border: 1px solid #999; padding-right: 1em; page-break-inside: avoid; }
+  tr, img { page-break-inside: avoid; }
+  img { max-width: 100% !important; }
+  @page :left { margin: 15mm 20mm 15mm 10mm; }
+  @page :right { margin: 15mm 10mm 15mm 20mm; }
+  p, h2, h3 { orphans: 3; widows: 3; }
+  h2, h3 { page-break-after: avoid; }
+}
+</style></head><body><h1 id="website-performance-case-study-reel-rock-tour">Website Performance Case Study: Reel Rock Tour</h1>
+
+<h6 id="by-andrew-consroe-73113">By: Andrew Consroe - 7/31/13</h6>
+
+<p>Today I got an email from Reel Rock Tour that they had a <a href="http://reelrocktour.com/">new website</a>. Since I like both websites and rock climbing, of course I was super excited! If you haven't ever seen one of their films, or don't know much about climbing, you should totally watch any or all of them; they're fantastic.</p>
+
+<p>Anyways, I hit the new site, and BAM, it's beautiful. Full page background pictures of mountains and Daniel Woods crushing some boulder, what could be better. Well, the background started do its carousel thing, and then there was jank, lots of jank. Jank!? What's jank?</p>
+
+<h2 id="jank">Jank</h2>
+
+<p>Jank is the opposite of smooth. Jerky. Jank comes from low framerates. What's a framerate?</p>
+
+<h2 id="framerate">Framerate</h2>
+
+<p>Framerate, typically measured in frames per second (FPS), is exactly what it sounds like in English; the number of frames (snapshots) your browser can display every second. Jank is most noticeable when the framerate dips under 30 FPS. The unofficial yet agreed upon target framerate for the web is 60 FPS. If your website hits this goal, people will be all, "Wow that website is so buttery!".</p>
+
+<h2 id="chrome-dev-tools">Chrome Dev Tools</h2>
+
+<p>Anyhow, I thought it would be fun to do a little investigation into the cause of the jank. And there's hardly a better tool than <a href="https://developers.google.com/chrome-developer-tools/">Chrome Dev Tools</a>. Firing up the website in question <a href="http://reelrocktour.com/">reelrocktour.com</a> in a new Incongnito Tab (to get the purest test results) and opening up Dev Tools, we'll first check out the Timeline.</p>
+
+<p>Using the Timeline in Dev Tools makes me feel like I'm in an engineering lab using an oscilliscope probing some digital circuit, and I like that. So I recorded the site, and let the background carousel scroll, and this is what it looks like.</p>
+
+<p><img src="file:///images/dev_tools_overview.png" alt="Dev Tools Timeline Overview"></p>
+
+<p>So on the top part, the bar chart shows lots of big green segments (paints) and all of them are above the 60 FPS line, and quite a few are above the 30 FPS line. That means the target 60 FPS is not being hit. But this just confirms what we already know. On the left, you can see a list of the events, and next to the ones that say paint, it gives the pixel dimensions of what was painted, in this case, (1366 x 682), which is my <em>entire</em> browser window. That's a lot of work for the browser to do.</p>
+
+<p>To get a better idea of why the paint is taking so long, you can zoom in on the timeline and focus on one of those huge paint times. Now we can see the details of what has to happen for that paint (which reminds of single-shot mode on an oscilliscope).</p>
+
+<p><img src="file:///images/dev_tools_single.png" alt="Dev Tools Timeline Closeup"></p>
+
+<p>As you can see that paint takes about 230ms. If we were trying to do 60 FPS, we want any event to happen in about 16.7ms (1/60). Major problemo. We can see the a large portion of that paint is taken up by an image decode. Something to explore in a second, but one more thing to notice. There seems to be a repeating pattern of Paint -&gt; Timer Fired -&gt; Recalculate Style -&gt; Layout. This, if I'm not mistaken, is typically called layout thrashing. In a few words, this means that the browser has to constantly compute the styles of affected elements, figure out their layout on the page, and paint.</p>
+
+<p><img src="file:///images/dev_tools_thrashing.png" alt="Dev Tools Timeline Layout Thrashing"></p>
+
+<h2 id="image-decode">Image Decode</h2>
+
+<p>Three of the four carousel background images are 1400 x 1020, while the last one is 4000 x 2662!! Woah man that's huge. The larger the image, or rather in this case as it's full screen, the larger the image, the more work it takes to decode it. Also of relevance, that huge image has to be resized to fit my screen, so there's no point in serving an image that large. (I can't seem to nail down, whether this image is resized everytime it's shown or if that resize gets cached.)</p>
+
+<h2 id="image-sliding">Image Sliding</h2>
+
+<p>The bulk of work, besides decoding, is from how the images are being slid.  The relevant code for the images being slid is here.</p>
+
+<pre><code>function animate(width) {
+  var curr = c === -1 ? c = slidesN - 1 : c = c % slidesN;
+  $($slider).stop().animate({left: -(width * c)}, 1200);
+}
+</code></pre>
+
+<p>Jquery is the heart of this code, as it is on like a bajillion other sites. The first line of the function seems like it doesn't do much, because <code>curr</code> isn't used anywhere else. Using the animate function here explains the timer fired that keeps showing up in the timeline. Let's try some things to see if we can make this part faster. (Just found out you can't live edit JS when it's pretty printed, unless I'm doing it wrong. So saved a local copy and working from that)</p>
+
+<h3 id="try-1">Try 1</h3>
+
+<pre><code>$($slider).css({
+  '-webkit-transition' : '-webkit-transform 1s ease'
+});
+
+function animate(width) {
+  $($slider).css({
+    '-webkit-transform':'translateX('+ -(width * c) +'px)',
+  });
+}
+</code></pre>
+
+<p>Were getting somewhere, paint times are now between 30 and 60 FPS instead of over 60 FPS. This gets rid of jQuery.animate, uses translateX instead of position left, and animates using a CSS transition which has a host of performance benefits. More explanation on animating left vs translate can be read about <a href="http://www.paulirish.com/2012/why-moving-elements-with-translate-is-better-than-posabs-topleft/">here</a>.</p>
+
+<h3 id="try-2">Try 2</h3>
+
+<pre><code>$($slider).css({
+  '-webkit-transition' : '-webkit-transform 1s ease'
+});
+
+function animate(width) {
+  $($slider).css({
+    '-webkit-transform':'translate3d('+ -(width * c) +'px, 0, 0)'
+  });
+}
+</code></pre>
+
+<p>This again uses a CSS transition, but now uses a 3d translate to move it left and up... 0? Why would we want to move it up 0 amount? This will (usually) cause Chrome (or other webkit browsers) to place it in its own layer and use the GPU and yadda yadda. Read more <a href="http://davidwalsh.name/translate3d">here</a>. Anyhow, it still isn't hitting the 60 FPS mark!</p>
+
+<h3 id="try-3">Try 3</h3>
+
+<p>Third times a charm!</p>
+
+<pre><code>&lt;div class="slide"&gt;
+  &lt;img src="reelrocktour.com_files/one.jpg" alt="" width="1400"&gt;
+  ...
+</code></pre>
+
+<pre><code>.slide {
+  position:relative;
+  height:100%;
+  width:100%;
+  overflow: hidden;
+  float:left;
+}
+.slide &gt; img {
+  position: absolute;
+  z-index: -1;
+}
+</code></pre>
+
+<p>So originally, each image was a <code>background-image</code> applied with CSS. Turns out that was the culprit. Changing the markup to include the image as an actual image allowed us to hit 60 FPS. The <code>img</code> is taken out of flow with <code>absolute</code> positioning and overflow is hidden for proper sizing. I suspect the browser can handle img tags much better than background-image styles because the image decoding seemed to disappear from the timeline. (Note: I did also resize that gigantic image to be width 1400). Also there are no image resizes to happen in this case because all images are 1400px wide and never have to be resized.</p>
+
+<h2 id="conclusions">Conclusions</h2>
+
+<p>There are a ton of jQuery animations on this page and a lot of them are pretty smooth, so its not totally the culprit. It would take some more investigation to figure out whether a jQuery animation would have worked fine with the change in markup, but why do that when you can do CSS animations! In addition, the translate3d trick did not have a significant impact in the end. I'm curious to know more about the performance of <code>background-image</code> and why it doesn't work in this situation. In hindsight, the huge image decode times should have lead me to go straight to pthe third solution, but oh well.</p>
+
+<p>Huge inspiration from <a href="https://www.youtube.com/watch?v=yQxjwjeTVzM">these</a> <a href="https://www.youtube.com/watch?v=z0_jD8nO5Zw">two</a> great videos, totally worth your while. And free time with two casts on my hands. And coffee. Twitter @aconz2.</p>
+</body></html>
