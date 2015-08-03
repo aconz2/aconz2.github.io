@@ -200,7 +200,7 @@ Object.keys(colors).forEach(function(key) {
   var child = document.createElement('div');
   child.setAttribute('style', fg);
   child.setAttribute('class', 'name');
-  child.innerText = key;
+  child.textContent = key;
 
   parent.appendChild(child);
   tmp.appendChild(parent);
