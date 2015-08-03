@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+date=$(date '+%Y-%m-%d')
+title=$1
+filename="${date}-${title// /-}.md"
+
+vim - +"file _posts/$filename" <<EOF
+---
+layout: post
+title:  "${1}"
+date:   ${date}
+categories:
+---
+EOF
+
