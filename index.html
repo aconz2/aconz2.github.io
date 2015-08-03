@@ -1,15 +1,23 @@
-<html>
-<head>
-  <title>Andrew Consroe</title>
-</head>
-<body>
-  <h1>My name is Andrew Consroe / @aconz2</h1>
-  <h5>This is a webpage, not a website</h5>
+---
+layout: default
+---
 
-  <h2>List of Pages</h2>
-  <ul>
-    <li><a href="/reel-rock-tour.html">Web Perf Review On A New Website</a></li>
-    <li><a href="/stylus-colors.html">Shows All Named Colors in Stylus</a></li>
+<div class="home">
+
+  <h1 class="page-heading">Posts</h1>
+
+  <ul class="post-list">
+    {% for post in site.posts %}
+      <li>
+        <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
+
+        <h2>
+          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+        </h2>
+      </li>
+    {% endfor %}
   </ul>
-</body>
-</html>
+
+  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
+
+</div>
