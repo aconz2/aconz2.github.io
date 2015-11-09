@@ -45,7 +45,7 @@ character probabilities given the previous characters. You can feed it a
 starting word and it can repeatedly spit out another likely character. I like
 to imagine a monkey hammering away at a keyboard, kinda like this:
 
-![Monkey Gif](http://gph.is/18Nr5Jy)
+<iframe src="//giphy.com/embed/FIth7F9ME9hrW" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="http://giphy.com/gifs/monkey-type-FIth7F9ME9hrW">via GIPHY</a></p>
 
 And this monkey is remarkably good at creating things which resemble recipes.
 For a more in depth dive into RNNs, I highly reccommend
