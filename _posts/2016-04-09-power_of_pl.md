@@ -11,9 +11,9 @@ Programming *needs* to change. I strongly believe that computers hold far more p
 
 StackOverflow is a symptom of how much of a mess we are in. The reason StackOverflow is invaluable as a programmer is because
 
-  1) we develop programs by repeatedly fixing errors
-	2) humans asking humans is necessary when the machine lacks information
-	3) it is almost always faster to find the answer online than in the source code
+  1. we develop programs by repeatedly fixing errors
+	2. humans asking humans is necessary when the machine lacks information
+	3. it is almost always faster to find the answer online than in the source code
 
 but each of these is a sign that something fundamental is broken.
 
