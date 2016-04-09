@@ -4,4 +4,4 @@ title: About
 permalink: /about/
 ---
 
-I study computer science and like to think about things. I also rock climb a lot.
+I am a recent computer science graduate from the University of Maryland, College Park. I like to think about things and go rock climbing.
