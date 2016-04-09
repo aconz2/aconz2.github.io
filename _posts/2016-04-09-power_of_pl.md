@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "On the Power of Programming Languages"
+title:  "Primoridal Programming Practices"
 date:   2016-04-09
 categories: programming
 ---
