@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Research Summary"
+title:  "K-mer Count Analysis Research Summary"
 date:   2015-11-03
 categories:
 ---
