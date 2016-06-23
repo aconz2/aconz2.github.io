@@ -12,9 +12,9 @@ I've been having a bit of a mid-programming crisis recently and it has started t
 I know, I know. I should download the source, read it front to back and make sure it does what I think it should do, and stop writing a stupid blog post. I can do this for `cat` because:
 
 
-	(1) its source code is freely [available](http://www.gnu.org/software/coreutils/coreutils.html)
-	(2) it is written in C, a standard language
-	(3) I can read and understand C
+1. its source code is freely [available](http://www.gnu.org/software/coreutils/coreutils.html)
+2. it is written in C, a standard language
+3. I can read and understand C
 	
 
 And this is one of the cornerstones of why open source software is important, regardless of its cost or licensing. But being open source only covers the first of those items and is only feasible for programs of a reasonable length. It is simply not scalable for users to necessarily read the entirety of a programs source code in order to trust it. While this is obvious for much larger programs than `cat`, it becomes more of an issue when considering all source code which `cat` depends on: the compiler you use, the syscalls it uses, which version of the kernel it interacts with, etc. Once you consider all transitive dependencies, my reading list just became a little too long for my liking.
