@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Lambda vs Cont - Continued"
-date:   2017-06-30
+date:   2017-07-01
 categories:
 ---
 
