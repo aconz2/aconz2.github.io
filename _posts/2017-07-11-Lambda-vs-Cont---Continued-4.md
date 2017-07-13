@@ -32,7 +32,7 @@ Explicit vs implicit is definitely a fuzzy phrase so I'll make the comparison as
 (+ (shift 'WRITE k `("hello " 0 ,k)) (shift 'WRITE k `("world" 1 ,k)))
 ```
 
-Here I've just given a sequence number to the effects in the order I want to see them execute. This has some obvious shortcomings when you get into bigger programs and composability. It might work if you label these things locally, but globally you'll need to label whole subtrees as well. Then, when an effect is raised, it's ordering-label is the list of labels currently active as the effect bubbles up so that `(0 0)` should happen before `(1 0)` (ie. lexical order).
+Here I've just given a sequence number to the effects in the order I want to see them execute. This has some obvious shortcomings when you get into bigger programs and have to think about composition. It might work if you label these things locally, but globally you'll need to label whole subtrees as well. Then, when an effect is raised, it's ordering-label is the list of labels currently active as the effect bubbles up so that `(0 0)` should happen before `(1 0)` (ie. lexical order).
 
 What would it look like to order a whole subtree of computation? Let's try:
 
