@@ -39,6 +39,6 @@ with database.atomic():
 
 Databases are crazy, the differences between different implementations is crazy.
 
-Using the same code with different databases does not give even close to the same semantics.
+Using the same code with different databases does not guarantee even close to the same semantics.
 
 I'm still thinking about how we might write code that would warn you against this.
