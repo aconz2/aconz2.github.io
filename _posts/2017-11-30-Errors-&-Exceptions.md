@@ -48,6 +48,8 @@ Using an OS process, we can restart a process which dies unexpectedly. Depending
 
 ## Know before you call
 
-In a depndently typed language, we can imagine that any situation where you might have an error, like say parsing an integer from a string, you would first have a function which examines the string and verify that there is (or isn't) a parseable integer in the string. Only then could you call the parsing function and you would know for sure that it worked. This is both appealing and unsettling to me. Doing so moves the error handling from handling the output of the function to handling the input of the function. This makes the caller responsible and not the callee.
+In a dependently typed language, we can imagine that any situation where you might have an error, like say parsing an integer from a string, you would first have a function which examines the string and verify that there is (or isn't) a parseable integer in the string. Only then could you call the parsing function and you would know for sure that it worked. This is both appealing and unsettling to me. Doing so moves the error handling from handling the output of the function to handling the input of the function. This makes the caller responsible and not the callee.
 
 The reason I hesitate to dive into this is because verifying an input will be accepted by a function a) duplicates some logic of the code that could get out of sync b) duplicates some computation that you could have just used to get the answer. This is why I think of typical error handling like Exceptions or Either as the fusion of some code that does the right thing and handles the error. We have manually inlined the two computations because we don't know how to do so automatically.
+
+Also, this falls down when dealing with external systems like a filesystem. If you require proof that a file exists in order to open it, then you have a race condition.
