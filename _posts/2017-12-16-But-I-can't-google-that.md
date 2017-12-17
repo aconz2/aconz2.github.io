@@ -9,7 +9,7 @@ I read a lot about programming related things on the internet: blogs, papers, co
 
 I don't want to drone on about the downsides of comment sections because like I said, I occasionally find interesting links, arguments, opinions, experiences, etc. that would be hard to come by anywhere else. That being said, here is a very common comment that I see under anything programming language related:
 
-> <Language Name> seems cool, but its such a horrible name because you can't google for it
+> &lt;Language Name&gt; seems cool, but its such a horrible name because you can't google for it
 
 This provides no value and is such a silly thing to say. Let's ramble off a list of programming languages that have names that have obvious [homographs](https://en.wikipedia.org/wiki/Homograph):
 
@@ -42,7 +42,7 @@ It makes me chuckle to think about a marketing director chiming in at a Ford mee
 
 There's another related comment that looks like this:
 
-> You should pick another name because <Language Name> is already used for <Something Else>
+> You should pick another name because &lt;Language Name&gt; is already used for &lt;Something Else&gt;
 
 Those people are in for a real treat when they open a dictionary and find multiple definitions all over the place. The horror!
 
