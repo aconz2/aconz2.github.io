@@ -11,7 +11,7 @@ I don't want to drone on about the downsides of comment sections because like I 
 
 > &lt;Language Name&gt; seems cool, but its such a horrible name because you can't google for it
 
-This provides no value and is such a silly thing to say. Let's ramble off a list of programming languages that have names that have obvious [homographs](https://en.wikipedia.org/wiki/Homograph):
+This provides no value and is such a silly thing to say. Let's ramble off a list of programming languages that have names that have obvious [homonyms](https://en.wikipedia.org/wiki/Homonym):
 
     - Ruby
     - Python
@@ -26,6 +26,10 @@ This provides no value and is such a silly thing to say. Let's ramble off a list
     - Julia
     - Groovy
     - Pony
+    - Clean
+    - Frank
+    - Oz
+    - Eiffel
 
 And a bunch of single letter ones which provide little clue to google:
 
