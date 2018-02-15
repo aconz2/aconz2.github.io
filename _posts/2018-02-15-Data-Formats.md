@@ -43,7 +43,7 @@ Then we could factor out the repeated keys to produce a schema/map and a blob (t
 [["Alice", "Actor"], ["Bob", "Builder"]]
 ```
 
-Now we can factor by the common length of the inner arrays (we couldn't do this in general if 1 of them had an extra key)
+Now we can factor by the common length of the inner arrays (we couldn't do this in general eg. if 1 of them had an extra key)
 
 ```json
 [{"keys": ["first", "last"], "length": 2}]
@@ -53,7 +53,7 @@ Now we can factor by the common length of the inner arrays (we couldn't do this 
 ["Alice", "Actor", "Bob", "Builder"]
 ```
 
-I'm handwaving over how these operations compose -- ie. do we end up with one schema at the end or a list of schemas that we have to apply in reverse to recover the original thing. Ideally whatever we end up with can be efficiently operated on, though this can also be a tradeoff that needs domain/situational input as well.
+I'm hand waving over how these operations compose -- ie. do we end up with one schema at the end or a list of schemas that we have to apply in reverse to recover the original thing. Ideally whatever we end up with can be efficiently operated on, though this can also be a tradeoff that needs domain/situational input as well.
 
 In a way, we are generating an ADT for the data we have as a way to compactly describe it. You can imagine the types would get pretty hairy for non-uniform things.
 
@@ -63,7 +63,7 @@ Data formats have to make a choice over what is universal to all participating p
 
 # Extensibility
 
-After a few years, people will have new needs and if you build a language around a data format, you are going to be SOL if you can't adapt. Extensibility is a hard problem but I think it can be managed with UUID tagging data. Remember, all new data has to be one of the base types at the leaves, but it is imporant semantically to be able to distinguish otherwise structurally equivalent types.
+After a few years, people will have new needs and if you build a language around a data format, you are going to be SOL if you can't adapt. Extensibility is a hard problem but I think it can be managed with UUID tagging data. Remember, all new data has to be one of the base types at the leaves, but it is important semantically to be able to distinguish otherwise structurally equivalent types.
 
 # References
 
