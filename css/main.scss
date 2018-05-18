@@ -42,7 +42,20 @@ $on-laptop:        800px;
     }
 }
 
-
+#hooks-n-forks {
+    .equation {
+        font-family: monospace;
+        font-size: 20px;
+        white-space: pre;
+        margin: 10px;
+    }
+    .F {color: red;}
+    .X {color: blue;}
+    .rhs .F {position: relative;}
+    .lhs::after {content: "="; display: inline;}
+    .grouping::before {content: "("; display: inline;}
+    .grouping::after {content: ")"; display: inline;}
+}
 
 // Import partials from `sass_dir` (defaults to `_sass`)
 @import
