@@ -1,0 +1,19 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+// hooks-n-forks
+
+#hooks-n-forks .equation {
+    font-family: monospace;
+    font-size: 20px;
+    white-space: pre;
+    margin: 10px;
+}
+#hooks-n-forks .F {color: red;}
+#hooks-n-forks .X {color: blue;}
+#hooks-n-forks .rhs .F {position: relative; top: -5px;}
+#hooks-n-forks .lhs::after {content: "="; display: inline;}
+#hooks-n-forks .grouping::before {content: "("; display: inline;}
+#hooks-n-forks .grouping::after {content: ")"; display: inline;}
