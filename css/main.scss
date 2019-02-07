@@ -57,6 +57,13 @@ $on-laptop:        800px;
     .grouping::after {content: ")"; display: inline;}
 }
 
+#random-walks {
+    img.walk-image {
+        image-rendering: pixelated;
+        width: 50px;
+    }
+}
+
 // Import partials from `sass_dir` (defaults to `_sass`)
 @import
         "base",
