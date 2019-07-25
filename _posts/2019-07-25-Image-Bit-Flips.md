@@ -1,0 +1,135 @@
+---
+layout: post
+title:  "Image Bit Flips"
+date:   2019-07-25
+categories:
+---
+
+<body>
+  <style>
+    canvas {max-width: 500px; max-height: 500px;}
+  </style>
+
+  <noscript>
+    <h2>You must have javascript enabled to use this page.</h2>
+  </noscript>
+
+  <p>
+    Load an image and see what happens when you randomly flip some bits. You can configure how many bits are flipped with the slider. Keep hitting the button to get different results. Try different image formats too.
+  </p>
+
+  <canvas width="100" height="100" id="original"></canvas>
+  <canvas width="100" height="100" id="flipped"></canvas>
+
+  <p>
+    <input type="file" id="input">
+  </p>
+  <p>
+    Number of bits to flip: <span id="show-n-flips">1</span>
+    <br />
+    <input type="range" min="1" max="1024" id="n-flips-slider" value="1">
+  </p>
+  <p>
+    <button id="go">Flip those bits!</button>
+  </p>
+
+  <script>
+    function b64ToU8(s) {
+      var raw = window.atob(s);
+      var ret = new Uint8Array(raw.length);
+      for(var i = 0; i < raw.length; i++) {
+        // I 100% don't understand how this call to charCodeAt is 0-255
+        ret[i] = raw.charCodeAt(i);
+      }
+      return ret;
+    }
+
+    function U8ToB64(buf) {
+      var ret = '';
+      for(var i = 0; i < buf.length; i++) {
+        ret += String.fromCharCode(buf[i]);
+      }
+      return btoa(ret);
+    }
+
+    function flipBit(n) {
+      var i = Math.floor(Math.random() * 7);
+      return n ^ (1 << i);
+    }
+
+    function flipBits(arr, n) {
+      var ret = new Uint8Array(arr);
+      for (var i = 0; i < n; i++) {
+        var j = Math.floor(Math.random() * arr.length);
+        ret[j] = flipBit(arr[j]);
+      }
+      return ret;
+    }
+
+    function getDataUrlParts(s) {
+      var match = /(data:image\/(gif|png|jpeg|jpg);base64,)(.+)/.exec(s);
+      if (match === null) return null;
+      return {header: match[1], kind: match[2], data: b64ToU8(match[3])};
+    }
+
+    function drawImageToCanvas(ctx, img) {
+      ctx.canvas.width = img.width;
+      ctx.canvas.height = img.height;
+      ctx.drawImage(img, 0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
+    var URL = window.webkitURL || window.URL;
+
+    // var input = document.getElementById('input');
+    input.addEventListener('change', handleFiles, false);
+    document.getElementById('go').addEventListener('click', function() {flipImage();}, false);
+
+    var slider = document.getElementById('n-flips-slider');
+    var sliderText = document.getElementById('show-n-flips');
+
+    slider.addEventListener('change', function() {
+      sliderText.innerText = slider.value;
+      flipImage();
+    }, false);
+
+    var originalCtx = document.getElementById('original').getContext('2d');
+    var flipCtx = document.getElementById('flipped').getContext('2d');
+
+    var originalImg = new Image();
+    originalImg.onload = function() {drawImageToCanvas(originalCtx, originalImg);}
+    var flipImg = new Image();
+    flipImg.onload = function() {drawImageToCanvas(flipCtx, flipImg);}
+    var imageParts = null;
+
+    // var testImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
+    // originalImg.src = testImage;
+    // imageParts = getDataUrlParts(testImage);
+
+    function flipImage(n) {
+      if (imageParts === null) {
+        console.log('No image yet');
+        return;
+      }
+      if (n === undefined) {n = slider.value;}
+      console.log('flipping ' + n + ' bits');
+      var flipped = flipBits(imageParts.data, slider.value);
+      flipImg.src = imageParts.header + U8ToB64(flipped);
+    }
+
+    function handleFiles(e) {
+      var reader  = new FileReader();
+      var file = e.target.files[0];
+      // this is to setup loading the image
+      reader.onloadend = function () {
+        imageParts = getDataUrlParts(reader.result);
+        if (imageParts === null) {
+          console.log('Error reading data, maybe not a jpeg or png?');
+          return;
+        }
+        originalImg.src = reader.result;
+        flipImage();
+      }
+   	  reader.readAsDataURL(file);
+    }
+  </script>
+</body>
