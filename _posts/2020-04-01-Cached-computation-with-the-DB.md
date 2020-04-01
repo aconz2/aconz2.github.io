@@ -21,10 +21,10 @@ There are multiple design choices to make. Let's assume you have some rows of da
 ### How much provenance does derived data remember?
 
 Each derived table needs to have some record of where its derived data comes from. You could store:
-1) Your predecessor
-2) The root (`D` in this case)
-3) The full chain
-4) Some combination
+1. Your predecessor
+2. The root (`D` in this case)
+3. The full chain
+4. Some combination
 
 I have been going with the root.
 
