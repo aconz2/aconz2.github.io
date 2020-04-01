@@ -7,14 +7,14 @@ categories:
 
 I've been working on a system that is concerned with 4 things:
 
-1) Store some data - full history is not recorded but we do want a revision number per row
-2) Derive some data - we have functions that take a row in our database and produce some other row. This can be repeated if you have a pipeline like `parse → compile → run` and we want to store all intermediate computations
-3) Recompute derived data when the input data changes
-4) Recompute derived data when the functions change
-5) Figure out if a particular derived data is stale
-6) Figure out all derived rows that are stale and run them
-7) Given a changed row in your input data, know which derived rows are stale and run them
-8) Demand a derived value and run it if not already computed
+1. Store some data - full history is not recorded but we do want a revision number per row
+2. Derive some data - we have functions that take a row in our database and produce some other row. This can be repeated if you have a pipeline like `parse → compile → run` and we want to store all intermediate computations
+3. Recompute derived data when the input data changes
+4. Recompute derived data when the functions change
+5. Figure out if a particular derived data is stale
+6. Figure out all derived rows that are stale and run them
+7. Given a changed row in your input data, know which derived rows are stale and run them
+8. Demand a derived value and run it if not already computed
 
 There are multiple design choices to make. Let's assume you have some rows of data in table `D` and a chain of functions `F`, `G` and `H` that get stored in tables `FT`, `GT`, and `HT` respectively (`FT = F(D)`, `GT = G(FT)`, `HT H(GT`).
 
