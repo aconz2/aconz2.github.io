@@ -53,6 +53,8 @@ It blows my mind that we all run software (this is certainly not the only place 
 
 After some more internet searching I finally found the culprit: `sudo`. `sudo` was configured to send an email to root every time a user used `sudo` (I guess this was the default on Fedora? Or maybe some bad config of policykit?). This mail was then going to my home directory `~/.esmtp_queue` where there were !thousands! of queued but undelivered emails! Each time `sudo` ran, it would try to send a new email, plus all the old ones that had failed.
 
+The punchline is that I was running my audit program with `sudo`, so everytime I ran the program, it would trigger the emails, and I would see those processes in my audit program. What I thought was a cron job was just me triggering it!
+
 I fixed it (hopefully for good) by doing the following:
 
 ```alternatives --remove-all mta```
