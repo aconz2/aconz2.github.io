@@ -16,7 +16,7 @@ The straightforward solution is to check each `pⁱ(a)` for `0 < i < |p|` where 
 
 For certain classes of permutations `p`, I have found what I believe to be a solution; here's the explanation and the code is down below.
 
-We require that the cycles of `p` in its cycle decomposition have lengths which are pairwise coprime. We then check each disjoint cycle, looking to see if the corresponding elements of `a` and `b` are rotations of one another, and if so, record the offset `x`.
+We require that the cycles of `p` in its cycle decomposition have lengths which are pairwise coprime and that their sum is equal to the length of `a` & `b` (this just means every element is permuted). If not every element is permuted, we can first check those corresponding elements of `a` and `b` are equal before going any further. We then check each disjoint cycle, looking to see if the corresponding elements of `a` and `b` are rotations of one another, and if so, record the offset `x`.
 
 If any of the cycles are not rotations in `a` and `b`, we know `b` is not reachable and can be done. We now have a list of equations `i = x_k mod len(cycles_k)` for `k` over the cycles. Applying the Chinese remainder theorem gives us `i`.
 
@@ -70,6 +70,7 @@ def calc_rotation_of(a, b):
     return None
 
 def possible_permutation_cycle(a, b, cycles):
+    # NOTE: this doesn't handle checking the non-permuted elements; assumes sum(map(len, cycles)) == len(a) == len(b)
     ret = []
     for cycle in cycles:
         i = calc_rotation_of([a[i] for i in cycle], [b[i] for i in cycle])
