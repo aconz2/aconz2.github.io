@@ -5,7 +5,7 @@ date:   2020-04-01
 categories:
 ---
 
-I've been working on a system that is concerned with 4 things:
+I've been working on an incremental compiler system that is concerned with 8 things:
 
 1. Store some data - full history is not recorded but we do want a revision number per row
 2. Derive some data - we have functions that take a row in our database and produce some other row. This can be repeated if you have a pipeline like `parse → compile → run` and we want to store all intermediate computations
