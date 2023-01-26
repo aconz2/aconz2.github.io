@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "reimplement-all-the-things"
+title:  "Reimplement All The Things"
 date:   2023-01-26
 categories:
 ---
