@@ -12,3 +12,7 @@ date:   ${date}
 categories:
 ---
 EOF
+
+git add "_posts/$filename"
+
+exec $EDITOR "_posts/$filename"
