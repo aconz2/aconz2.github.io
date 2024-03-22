@@ -1,8 +1,8 @@
 # Site settings
-title: Andrew Consroe
-email: my username at gmail
+title: aconz2
+email: username at gmail
 description: > # this means to ignore newlines until "baseurl:"
-  My writing.
+  Stuff.
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: "https://aconz2.github.com" # the base hostname & protocol for your site
 github_username:  aconz2
