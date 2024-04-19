@@ -53,3 +53,7 @@ The only reason I got an i7 & 16GB is because the deal made it ~$100 to upgrade 
 ## Closing
 
 The only thing I wish is that the keyboard was the same as before but that's something I can live with. If you're in the market for a laptop, check out Dell Outlet for a Latitude.
+
+## Update 2024-04-19
+
+Reviewing old posts and saw this was from 2017 wow. Laptop is still in great condition. Replaced the battery (F3YGT from ifixit) 2022-11 and also the charging port (8GJM9) 2024-01

@@ -5,7 +5,7 @@ date:   2018-02-11
 categories:
 ---
 
-An identifier in a program lets us refer to something by name. Often times, in an attempt to make the program easier to follow, we use identifiers which are compound words or other multi-word trains. Each programming language may have itsOwnRules AboutHowTo combine-different-words but_they_all serve the same purpose. Regardless of how you spell it, the identifier is supposed to be a human aid to understanding. The two things I want to look at for identifiers are variables and functions.
+An identifier in a program lets us refer to something by name. Often times, in an attempt to make the program easier to follow, we use identifiers which are compound words or other multi-word trains. Each programming language may have itsOwnRules AboutHowTo combine-different-words but _they_ all serve the same purpose. Regardless of how you spell it, the identifier is supposed to be a human aid to understanding. The two things I want to look at for identifiers are variables and functions.
 
 ## Variables
 

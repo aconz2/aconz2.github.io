@@ -79,3 +79,17 @@ An output description is similar to the exit file that OCI container runtimes pr
 ```
 
 The output description also probably needs something specifying the output locations, probably object url
+
+Where should the scheduler run? For quick runs, your local machine could be okay, but if it needs to eg run overnight, nicer to have it running on a server somewhere
+
+could we run the scheduler in a p2p fashion so that the node we spin up to run the job can also take care of scheduling?
+
+how can we schedule across clouds?
+
+can the json description be rich enough to support HPC use cases? Like describing an MPI environment with minimum link capacity etc
+
+do we write outputs into a database & a blob store? just an object store?
+
+want to support use case of scientist has an AWS account from their institution
+
+maybe run a sidecar container that takes care of copying the outputs to their output location and reporting metrics etc. really don't want much or any changes to the tool to work with this system
