@@ -60,7 +60,7 @@ echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governo
 ```
 
 
-## straight gcc
+## from inside toolbox container
 
 ```
 hyperfine --warmup=5 --runs=1000 --shell=none "gcc --version"
@@ -110,9 +110,19 @@ RUN singularity build gcc14.sif docker://gcc:14.1.0
 # 73.4 ± 1.0 ms
 ```
 
-## qemu
+## qemu fedora cloud base generic manually install gcc (without boot obv)
 
-todo
+```
+virt-customize -a ~/Downloads/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2 --root-password password:hello
+qemu-system-x86_64 -smp 2 -enable-kvm -m 2048 -drive file=~/Downloads/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2
+
+# 0.5ms +- 1ms lol wtf
+# with -smp 4 vcpus and taskset -c 0, getting
+# 0.5ms +- 0.25ms
+```
+
+todo figure out how to boot qemu and send it a command with the user logged in already; do I need mon? or pause?
+todo try with host cpu instead of qemu virtual cpu
 
 ## firecracker
 
