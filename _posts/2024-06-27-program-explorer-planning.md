@@ -59,6 +59,12 @@ fedora 39, 5950x
 echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 ```
 
+## on bare system
+
+```
+ taskset -c 0 ./hyperfine-v1.18.0-x86_64-unknown-linux-gnu/hyperfine --shell=none --warmup=500  'gcc --version'
+# 645.2 us +- 26.5 us
+```
 
 ## from inside toolbox container
 
