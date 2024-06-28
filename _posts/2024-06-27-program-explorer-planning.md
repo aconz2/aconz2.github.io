@@ -50,3 +50,74 @@ Another piece that I'd like to eventually support is benchmarking on real hardwa
 Also maybe eventually support different kernel versions. And even baremetal if possible?
 
 Of course, I'd like this to work in a self-hosted manner as well so that you can bring your own compute. I want to keep that in mind but not sure it will be the primary guiding principle in development or secondary. Just not sure yet because there are loads of variations. I know lots of orgs give out cloud accounts now so that could be nice if you could plug it in to that but that's a ton of complexity in itself. If you're just running on your own machine, that is still different than running the worker on a dedicated machine which is what the production setup would be like.
+
+# some random benchmarking
+
+fedora 39, 5950x
+
+```
+echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+```
+
+
+## straight gcc
+
+```
+hyperfine --warmup=5 --runs=1000 --shell=none "gcc --version"
+# 2.3 ± 0.4 ms
+```
+
+## launching container w/ podman
+
+```
+hyperfine --warmup=5 --min-runs=100 --shell=none "podman run --rm --network=none gcc:14.1.0 gcc --version"
+# 291.2 ± 70.3 ms
+```
+
+## Singularity (inside a container)
+
+```
+# TODO idk what a good base image is
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y wget \
+                       cryptsetup \
+                       libfuse-dev \
+                       squashfs-tools \
+                       uidmap \
+                       fuse \
+                       fuse2fs \
+                       crun \
+    && \
+    wget -O /tmp/singularity.deb https://github.com/sylabs/singularity/releases/download/v4.1.3/singularity-ce_4.1.3-noble_amd64.deb && \
+    dpkg -i /tmp/singularity.deb && \
+    apt-get remove -y wget && \
+    apt-get clean && \
+    rm -f /tmp/singularity.deb
+
+# TODO somehow this all pulls in libjpeg of all things, how is that even right?
+
+WORKDIR /root
+RUN singularity build gcc14.sif docker://gcc:14.1.0
+
+# need to run with --privileged for fuse mount to work
+# podman build -t singularitycontainer -f singularitycontainerfile
+# podman run --rm -it --privileged localhost/singularitycontainer
+
+# hyperfine --warmup=5 --runs=1000 --shell=none "singularity exec --network none  gcc14.sif /usr/local/bin/gcc --version"
+# 73.4 ± 1.0 ms
+```
+
+## qemu
+
+todo
+
+## firecracker
+
+todo
+
+## kata
+
+todo
