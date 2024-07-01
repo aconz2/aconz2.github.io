@@ -80,6 +80,29 @@ hyperfine --warmup=5 --min-runs=100 --shell=none "podman run --rm --network=none
 # 291.2 ± 70.3 ms
 ```
 
+## launching container w/ containerd and nerdctl
+
+```
+wget https://github.com/containerd/nerdctl/releases/download/v1.7.6/nerdctl-full-1.7.6-linux-amd64.tar.gz
+wget https://github.com/containerd/containerd/releases/download/v1.7.18/containerd-1.7.18-linux-amd64.tar.gz
+./hyperfine --warmup=5 --shell=none 'sudo ./nerdctl run --rm --network=none gcc:14.1.0 gcc --version
+# 400.5 ± 18.5 ms
+```
+
+## kata
+
+```
+# kata installed from dnf kata-containers, but doesn't include the kernel and initrd? so downloaded those from
+wget https://github.com/kata-containers/kata-containers/releases/download/3.6.0/kata-static-3.6.0-amd64.tar.xz
+→ sudo ln -s $(readlink -f ~/Downloads/kata-static-3.6.0-amd64/kata/share/kata-containers/kata-containers-initrd.img) /var/cache/kata-containers/kata-containers-initrd.img
+→ sudo ln -s $(readlink -f ~/Downloads/kata-static-3.6.0-amd64/kata/share/kata-containers/vmlinuz.container) /var/cache/kata-containers/vmlinuz.container
+→ sudo ./nerdctl run --runtime io.containerd.kata.v2 --rm --network=none gcc:14.1.0 gcc --version
+# 781.2 ± 29.6 ms
+
+getting error 
+ERRO[2024-07-01T16:50:07.583883505-05:00] failed to delete cmd="/usr/bin/containerd-shim-kata-v2 -namespace default -address /run/containerd/containerd.sock -publish-binary /var/home/andrew/Repos/program-explorer/bin/containerd -id bdf1493220ed78c326374b7f0a872520c5925b8b2aefbec66c2ccf4247674c1c -bundle /run/containerd/io.containerd.runtime.v2.task/default/bdf1493220ed78c326374b7f0a872520c5925b8b2aefbec66c2ccf4247674c1c delete" error="exit status 1" namespace=default
+```
+
 ## Singularity (inside a container)
 
 ```
@@ -131,9 +154,5 @@ todo figure out how to boot qemu and send it a command with the user logged in a
 todo try with host cpu instead of qemu virtual cpu
 
 ## firecracker
-
-todo
-
-## kata
 
 todo
