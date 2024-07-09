@@ -154,8 +154,44 @@ qemu-system-x86_64 -smp 2 -enable-kvm -m 2048 -drive file=~/Downloads/Fedora-Clo
 # 0.5ms +- 0.25ms
 ```
 
-todo figure out how to boot qemu and send it a command with the user logged in already; do I need mon? or pause?
-todo try with host cpu instead of qemu virtual cpu
+## qemu fedora cloud base microvm time to boot and shutdown gracefully
+
+just building up examples to get there, 7s is obviously too much
+
+```
+→ virt-cat fedora-cloud-base.raw /etc/systemd/system/myboot.service
+[Unit]
+Description=My boot service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/boot.sh
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target
+
+→ virt-cat fedora-cloud-base.raw /usr/local/bin/boot.sh
+#!/usr/bin/bash
+
+echo "HII"
+shutdown now
+
+qemu-system-x86_64 \
+    -M microvm,x-option-roms=off,pit=off,pic=off,isa-serial=off,rtc=off \
+    -nodefaults -no-user-config -nographic \
+    -enable-kvm \
+    -cpu host -smp 4 -m 1G \
+    -kernel vmlinuz-6.8.5-301.fc40.x86_64 -append "root=/dev/vda4 console=hvc0 rootflags=subvol=root" \
+    -initrd initramfs-6.8.5-301.fc40.x86_64.img \
+    -device virtio-blk-device,drive=test \
+    -drive id=test,file=fedora-cloud-base.raw,format=raw,if=none \
+    -chardev stdio,id=virtiocon0 \
+    -device virtio-serial-device \
+    -device virtconsole,chardev=virtiocon0
+
+# 6.719 +- 0.236s
+```
 
 ## firecracker
 
