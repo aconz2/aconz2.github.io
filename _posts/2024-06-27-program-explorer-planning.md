@@ -193,6 +193,33 @@ qemu-system-x86_64 \
 # 6.719 +- 0.236s
 ```
 
+## qemu microvm using kata container kernel and initrd wip
+
+```
+# https://github.com/kata-containers/kata-containers/releases/download/3.6.0/kata-static-3.6.0-amd64.tar.xz
+d=$(realpath ~/Downloads/kata-static-3.6.0-amd64/kata/share/kata-containers)
+
+# boots very fast!
+# kernel is 43M
+# initrd is 15M
+
+qemu-system-x86_64 \
+    -M microvm,pit=off,pic=off,isa-serial=off,rtc=off \
+    -nodefaults -no-user-config -nographic \
+    -enable-kvm \
+    -cpu host -smp 4 -m 1G \
+    -kernel $d/vmlinux-6.1.62-132 -append "console=hvc0" \
+    -initrd $d/kata-alpine-3.18.initrd \
+    -chardev stdio,id=virtiocon0 \
+    -device virtio-serial-device \
+    -device virtconsole,chardev=virtiocon0
+
+# shows boot output then some json lines messages from the kata agent
+# you can poke around in here with rdinit=/bin/bash kernel arg
+```
+
+Maybe this is dumb but how does this work without a rootfs? It just runs from the initrd?
+
 ## firecracker
 
 todo
