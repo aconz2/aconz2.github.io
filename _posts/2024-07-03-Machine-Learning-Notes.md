@@ -76,5 +76,15 @@ With all the focus on mechanistic interpretability for how do we reverse enginee
   * regularize overall layer weights by `d_ijk|w_ijk|` (locality; 2d euclidean distance between neuron (rows) after laying out layer neurons (matrix)) and occasionally trying row swapping within a layer if it minimizes this loss too since they say it gd gets stuck in a local minima
   * pretty pictures
   * the mnist pictures show the last layer of digit "neurons" (I suppose its a fine term when visualizing rows as dots but I still have an aversion to it) with one dot per digit arranged in a circle; did they use a circular layout in the distance calculation? I guess it is because the location of some digits change (see last page). But idk if that is a useful layer to have positions on; I guess if the data were skewed so all 9's were in the top right and all 1's were in the bottom left, then maybe. The dots layout is still confusing me a bit b/c for example the input layer is a 2d grid of dots where each dot is a scalar, but then the actual layers are one dot per row/matrix (for 2d/3d) right?
+* [Language Modeling with Gated Convolutional Networks](https://arxiv.org/abs/1612.08083)
+  * gated linear unit, GLU
+  * glu = mul(relu(Wx), Vx),  bilinear = mul(Wx, Vx), lstm style (gated tanh unit) gtu = mul(tanh(Wx), relu(Vx)) leads to vanishing gradients b/c you get tanh' and sigma' on both (respective) factors of chain rule
+  * they call this is a multiplicative skip connection for the gradient. todo understand the gradient calculation better since it seems they ditch the 
+  * why does google rank the "glu variants improve transformer" paper over this one
+  * fig 1 diagram shows taking half the vector for W and the other half for V, like glu = mul(relu(W@left(x)), W@right(x)), reminds me of affine coupling layer (flow matching)
+* [NICE: Non-linear Independent Components Estimation](https://arxiv.org/abs/1410.8516v6)
+  * affine coupling layer, u, v = split(x); y = concat(u, mul(v, f(v)) + g(v))
+  * didn't read much, came via [vid](https://youtu.be/DDq_pIfHqLs?t=267)
 * [https://github.com/lucidrains/x-transformers](https://github.com/lucidrains/x-transformers)
 * [https://github.com/karpathy/minGPT/blob/master/mingpt/model.py](https://github.com/karpathy/minGPT/blob/master/mingpt/model.py)
+
