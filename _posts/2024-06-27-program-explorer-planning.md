@@ -222,6 +222,49 @@ qemu-system-x86_64 \
 
 Maybe this is dumb but how does this work without a rootfs? It just runs from the initrd?
 
+## cloud hypervisor to custom initramfs
+
+```
+#!/bin/busybox sh
+
+export PATH=/bin
+
+busybox ls -l /
+
+echo 'hi'
+busybox poweroff -f
+```
+
+```
+# based on linux/usr/gen_init_cpio
+# make with ~/Repos/linux/usr/gen_init_cpio initattempt1 > init1.initramfs
+# cpio -t < init1.initramfs
+
+# A simple initramfs
+dir /dev 0755 0 0
+nod /dev/console 0600 0 0 c 5 1
+dir /root 0700 0 0
+dir /sbin 0755 0 0
+dir /bin 0755 0 0
+file /bin/busybox busybox 0755 0 0
+file /init myinit 0755 0 0
+```
+
+```
+k=
+
+./cloud-hypervisor-static \
+    --kernel /home/andrew/Repos/linux/vmlinux \
+    --initramfs init1.initramfs \
+    --cmdline "console=hvc0" \
+    --cpus boot=1 \
+    --memory size=1024M
+```
+
+```
+127.3 +- 5.4 ms
+```
+
 ## firecracker
 
 todo
