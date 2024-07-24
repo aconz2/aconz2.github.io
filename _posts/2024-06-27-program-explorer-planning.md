@@ -263,7 +263,7 @@ file /init myinit 0755 0 0
 127.3 +- 5.4 ms
 ```
 
-## cloud hypervisor to custom initramfs (minimal boot)
+## cloud hypervisor to custom initramfs running gcc with --no-pivot
 
 ```
 #!/bin/busybox sh
@@ -329,6 +329,90 @@ file /config.json config.json 0444 0 0
 
 ```
 163.5 +- 7.8 ms was time to actually run gcc --version
+```
+
+## cloud hypervisor to custom initramfs running gcc
+
+happened across [this comment](https://github.com/containers/bubblewrap/issues/592#issuecomment-2243087731) with very good timing! solved the `pivot_root` error so don't need --no-pivot
+
+```
+#!/bin/busybox sh
+
+export PATH=/bin
+
+# otherwise we get a kernel panic and the vmm process hangs
+trap "busybox poweroff -f" EXIT
+
+# crun needs /proc/self/exe for stuff, cgroup_root for containers, and devtmpfs for mounting our sqfs
+busybox mount -t proc none /proc
+busybox mount -t cgroup2 none /sys/fs/cgroup
+busybox mount -t devtmpfs none /dev
+
+echo 'hi'
+
+busybox mkdir -p /mnt/bundle/rootfs
+busybox mount -t squashfs -o loop /dev/vda /mnt/bundle/rootfs
+
+busybox mv /config.json /mnt/bundle/config.json
+
+busybox unshare --mount /bin/init2
+```
+
+init2
+
+```
+#!/bin/busybox sh
+
+busybox mkdir /abc
+busybox mount --rbind / /abc
+cd /abc
+busybox mount --move . /
+busybox chroot . /bin/init3
+```
+
+init3
+
+```
+#!/bin/busybox sh
+
+crun run --bundle /mnt/bundle containerid-1234
+```
+
+```
+# make with ~/Repos/linux/usr/gen_init_cpio initattempt1 > init1.initramfs
+
+dir /dev 0755 0 0
+dir /proc 0755 0 0
+dir /sys 0755 0 0
+dir /sys/fs 0755 0 0
+dir /sys/fs/cgroup 0755 0 0
+dir /root 0700 0 0
+dir /sbin 0755 0 0
+dir /bin 0755 0 0
+dir /tmp 0755 0 0
+
+nod /dev/console 0600 0 0 c 5 1
+
+file /bin/busybox busybox 0755 0 0
+file /init myinit 0755 0 0
+file /bin/init2 init2 0755 0 0
+file /bin/init3 init3 0755 0 0
+file /bin/crun crun-1.15-linux-amd64 0755 0 0
+file /config.json config.json 0444 0 0
+```
+
+```
+./cloud-hypervisor-static \
+    --kernel /home/andrew/Repos/linux/vmlinux \
+    --initramfs init1.initramfs \
+    --cmdline "console=hvc0" \
+    --disk path=gcc-squashfs.sqfs,readonly=on,id=container-bundle-squashfs \
+    --cpus boot=1 \
+    --memory size=1024M
+```
+
+```
+166.8 +- 5.0 ms
 ```
 
 ## firecracker
