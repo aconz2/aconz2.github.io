@@ -348,11 +348,10 @@ busybox mount -t proc none /proc
 busybox mount -t cgroup2 none /sys/fs/cgroup
 busybox mount -t devtmpfs none /dev
 
-echo 'hi'
-
 busybox mkdir -p /mnt/bundle/rootfs
 busybox mount -t squashfs -o loop /dev/vda /mnt/bundle/rootfs
 
+# the config.json is whatever crun spec creates with args changed to gcc --version
 busybox mv /config.json /mnt/bundle/config.json
 
 busybox unshare --mount /bin/init2
@@ -367,7 +366,7 @@ busybox mkdir /abc
 busybox mount --rbind / /abc
 cd /abc
 busybox mount --move . /
-busybox chroot . /bin/init3
+exec busybox chroot . /bin/init3
 ```
 
 init3
@@ -375,7 +374,7 @@ init3
 ```
 #!/bin/busybox sh
 
-crun run --bundle /mnt/bundle containerid-1234
+exec crun run --bundle /mnt/bundle containerid-1234
 ```
 
 ```
@@ -402,6 +401,11 @@ file /config.json config.json 0444 0 0
 ```
 
 ```
+# make sqfs from container
+# id=$(podman create docker.io/library/gcc/:14.1.0)
+# podman export "$id" | sqfstar gcc-squashfs.sqfs
+# podman rm "$id"
+
 ./cloud-hypervisor-static \
     --kernel /home/andrew/Repos/linux/vmlinux \
     --initramfs init1.initramfs \
