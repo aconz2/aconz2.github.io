@@ -42,6 +42,48 @@ Q: Is QK positive semidefinite? Should it be? x^TAx >= 0 means we never flip the
 Symmetry seems to be all the rage. O(d) is the Lie group (group with infinite members) of orthogonal transformations eqv (d,d) ortho matrices (inv(A) == transp(A)) eqv symmetry of a d-circle. SO(d) (special) are the rotations ie excluding the flips. In physics U and SU are unitary for complex. Equivariant wrt a symmetry G is when f(Gx) = Gf(x) ie applying any transformation in the symmetry on the input is the same as applying it on the output. Invariant is when f(Gx) = f(x). first fundamental theorem of invariant theory: f is O(d) invariant iff f(A) = f'(gram(A)) remember gram(A) is all pairwise dot products gram (n,d) -> (n,n). f is O(d) equivariant iff f(V) = sum(gi(gram(V))V) ie a weighted sum of V, where the weights are computed from the gram cucumber. E(d) is the euclidean group which preserves euclid distance, so O(d) + translations. For a point cloud, can get E(d) invariance by subtracting the mean/centroid of the points "canoniclization". Ie a way to choose a unique representative (similar to choosing the pair (u,v) st u < v or the sorted version of a set when programming.
 [vid1](https://www.youtube.com/watch?v=kpbbM0WQkZ8) [paper1](https://www.arxiv.org/abs/2407.09468)
 
+### diffusion and score-based generative models
+
+From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
+
+note to self using grad everywhere but remember grad(f : n -> 1) : (1,n) vector of derivatives and jacobian(f : n -> m) : (m,n) matrix of derivatives
+
+* we have data samples, like images, that we suppose come from some underlying distribution. these samples are very sparse in the full space, ie the density is very low/spread out among all possible images
+* to model the data, we can use a nnet f to predict p(x) but nnet hard to restrict to a pdf. we can always use exp(f(x)) to get nonnegative, but we need to divide by a normalizing term Z to get a true pdf. softmax takes care of this in the discrete case, but is intractable here. Z is computable in closed form for eg gaussian. alternatives to exact normalizing constant are:
+  * approximate the constant (energy based models)
+  * restricted nnets (autoregreesive, normalizing flow, variational ae)
+  * model the generation process only (GAN)
+* for a pdf p(x), the (Stein) score function is grad(log(p(x)), x) (score is a crazy name to me). gradient of the log prob
+  * for p(x) = exp(f(x)) / Z, score(p) = grad(log(p)) = grad(f(x)) - grad(log(Z)) and the second term goes to 0
+  * so s(x) = grad(f(x)) which we can get with backprop for any nnet f
+* to estimate score from data, need an objective, for score(x) : d -> d
+  * replace fisher divergence with score matching because it requires knowing the true score function. but score matching requires trace of jacobian, so 1 backpass per dimension of the input
+  * sliced score matching (from sliced fisher div) projects the score (vector field) to random directions. end up with vT grad f(x) v = vT grad vT f(x). ie we dot with a direction vector v on the output of the nnet so we get a scalar output and then again after the backward pass to get a scalar result (on both sides). so then we only need one backprop per sample+direction
+  * denoising score matching, derive a noisy distribution q from p by adding gaussian noise and then try to find the score of this dist
+* sampling, assume we've learned a good score function s
+  * if we directly follow s by integrating random points, we'll get clusters boo. so we use langevin dynamics to add noise at each step during integration
+  * on its own, this gives bad samples b/c our learned score function is very innacurate in low data-density regions (remember real images are very sparse in the space of all images)
+  * by adding noise to data points, we can learn a better s in regions around our data points
+  * extend by doing this for multiple noise levels to get one s for each noise level
+  * extend by doing noise conditional score model where the score model gets the noise level as an input s(x, std) (related to DDPM todo)
+* control the generation process
+  * to condition on some input (like a prompt/caption), we want to train a p(x | y). expand with bayes rule and compute the score function and we get score(p(x | y)) = score(p(x)) + score(p(y | x))
+  * p(y | x) is just a model that takes an image and gives a caption (or whatever we are conditioning on). Can use any model we want in conjunction with our score(p(x))
+  * though really we need a p(y | x, t) a time dependent classifier (can train a classifier on noised images)
+* probability evaluation
+  * train a model to estimate based on varying noise level t [0, T] score(pt(x)) where p0(x) are our data points, pT(x) is a fully noised version and is eqv to eg a gaussian and pt(x) is somewhere in between.
+  * sde stochastic differential equation dx = f(x, t)dt + g(t)dw where g(t)dw is the stochastic part
+  * for this we choose sde of the form dx = sigma(t)dw, and can derive a reverse time sde which depends on a time dependent/condition score function s(x, t)
+  * can derive an ordinary differential equation ode (probability flow ODE) which is a function of s(x, t)
+  * lets us compute p(x) for any image using an odesolver to step s(x, t)
+* Q&A says that unet is a common architecture for the actual nnet
+* some more practical investigations in [this video](https://www.youtube.com/watch?v=T0Qxzf0eaio)
+  * stochastic still gives best generation results
+  * most training time spent in the middle third of t
+  * the nnet needs scaling so that across all noise levels the magnitude of values are similar
+  * they use a weighted skip connection so that at low noise levels, they effectively predict noise to correct input, at high noise levels, predict signal to override input
+  * the skip connection effectively makes it predict the noise b/c its like img = noisy(img) - noiseof(noisy(img))
+
 # Links
 
 * [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
