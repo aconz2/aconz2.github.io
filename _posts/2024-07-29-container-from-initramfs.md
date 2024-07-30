@@ -295,14 +295,14 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ## Discussion
 
-* Our `rootfs` has id 1 in (1) and parent id 1, which means it has no parent mount (`mnt_has_parent(struct mount)` checks `mnt != mnt->parent` in `fs/mount.h`)
+* Our `rootfs` has id 1 in `(1)` and parent id 1, which means it has no parent mount (`mnt_has_parent(struct mount)` checks `mnt != mnt->parent` in `fs/mount.h`)
   * And in the new mount namespace, it has id 23 and parent 23 so same thing
-* We can see that because we run `init2` in a new mount namespace, (1) and (5) are identical
-  * Also that the `/` rootfs has id 1 in (1) and 23 in (2)
-* The `--rbind` in (2) binds all the mounts `rootfs proc cgroup2 devtmpfs squashfs` under `/abc`, not just `rootfs`
+* We can see that because we run `init2` in a new mount namespace, `(1)` and `(5)` are identical
+  * Also that the `/` rootfs has id 1 in `(1)` and 23 in `(2)`
+* The `--rbind` in `(2)` binds all the mounts `rootfs proc cgroup2 devtmpfs squashfs` under `/abc`, not just `rootfs`
   * The resulting bind mount `rootfs` is id 28 with parent 23 (the real `rootfs`). We now have a parent mount for our rootfs!
-* The `--move` in (3) then moves our bind mounts from `/abc` to `/`
-* The `chroot` in (4) then hides our original set of mounts so we only see mounts starting with id 28
+* The `--move` in `(3)` then moves our bind mounts from `/abc` to `/`
+* The `chroot` in `(4)` then hides our original set of mounts so we only see mounts starting with id 28
 * Then some warning from the kernel about `memfd_create` that I haven't looked into
 * Then the output of `gcc --version` running in its container
 
@@ -310,21 +310,107 @@ I was reading what kata containers do in this situation to see if they did somet
 
 ## Extra
 
-### `pivot_root` instead of crun
+### stracing crun
 
-I wanted to show what happens when you do a `pivot_root`, but am not getting this to work. `crun` does a `pivot_root . .` which is slightly bizarre to me, but is in conjunction with a few other steps, like opening `/` to keep an fd handle to it. Source is [`do_pivot`](https://github.com/containers/crun/blob/cd722fa81d03a5420d622ec3c97db752de92238c/src/libcrun/linux.c#L1873)
-
-Maybe I should step through crun when it does this and print mountinfo after each step
-
-In `init3`, instead of running `crun`, we do `mkdir /new-root && cd new-root && pivot_root . old-root && cat /proc/mount/mountinfo' (gives an 
+I wanted to see the state of `/proc/self/mountinfo` when `crun` is doing its `pivot_root` in [`do_pivot`](https://github.com/containers/crun/blob/cd722fa81d03a5420d622ec3c97db752de92238c/src/libcrun/linux.c#L1873). I wish `strace` had an option for running a hook command on trace events, but it doesn't, so I hacked one in:
 
 ```
-todo not workign
+--- a/src/syscall.c
++++ b/src/syscall.c
+@@ -1021,6 +1021,9 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
+        dumpio(tcp);
+        line_ended();
+ 
++    system("busybox awk -e '{printf(\"%2d %2d %6s %3s %-25s %-10s\\n\", $1, $2, $3, $4, $5, $8);}' /proc/self/mountinfo 1>&2 && busybox sha256sum /proc/self/mountinfo 1>&2");
++    tprints_string("-------------------------------------------------------------------\n");
++
+ #ifdef ENABLE_STACKTRACE
+        if (stack_trace_mode)
+                unwind_tcb_print(tcp);
 ```
+
+build with `./configure LDFLAGS='-static'`
+
+symlink busybox to `/bin/sh` so that `system(3)` works
+
+```
+# pseudo diff for inintramfs.file
++ slink /bin/sh /bin/busybox 0555 0 0
++ file /bin/strace /home/andrew/Repos/strace/src/strace 0555 0 0
+```
+
+```
+# pseudo diff for init3
+- crun run --bundle /run/bundle containerid-1234
++ strace -f --trace pivot_root,mount,umount2 crun run --bundle /run/bundle containerid-1234
+```
+
+Ultimately this isn't even interesting, because the mountinfo looks the same the whole time on all 52 calls (hence why I included the shasum so I could quickly scan). In the output below, I'm just showing the regular strace output because the mountinfo is always the same as `(4)` above. I still don't actually know what `pivot_root . .` achieves.
+
+<details markdown="1">
+<summary>The strace output</summary>
+
+```
+strace: Process 673 attached
+[pid   673] mount(NULL, "/", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount(NULL, "/run/bundle/rootfs", NULL, MS_PRIVATE, NULL) = 0
+[pid   673] mount("/run/bundle/rootfs", "/run/bundle/rootfs", NULL, MS_BIND|MS_REC, NULL) = 0
+[pid   673] mount(NULL, "/run/bundle/rootfs", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount(NULL, "/run/bundle/rootfs", NULL, MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount("proc", "/proc/self/fd/6", "proc", 0, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/8", NULL, MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount("tmpfs", "/proc/self/fd/6", "tmpfs", MS_NOSUID|MS_STRICTATIME, "mode=755,size=65536k") = 0
+[pid   673] mount(NULL, "/proc/self/fd/8", NULL, MS_NOSUID|MS_REMOUNT|MS_BIND|MS_STRICTATIME, NULL) = 0
+[pid   673] mount("devpts", "/proc/self/fd/8", "devpts", MS_NOSUID|MS_NOEXEC, "newinstance,ptmxmode=0666,mode=0"...) = 0
+[pid   673] mount(NULL, "/proc/self/fd/6", NULL, MS_NOSUID|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount("shm", "/proc/self/fd/8", "tmpfs", MS_NOSUID|MS_NODEV|MS_NOEXEC, "mode=1777,size=65536k") = 0
+[pid   673] mount(NULL, "/proc/self/fd/6", NULL, MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount("mqueue", "/proc/self/fd/8", "mqueue", MS_NOSUID|MS_NODEV|MS_NOEXEC, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/6", NULL, MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount("sysfs", "/proc/self/fd/6", "sysfs", MS_NOSUID|MS_NODEV|MS_NOEXEC, NULL) = 0
+[pid   673] mount("cgroup2", "/proc/self/fd/6", "cgroup2", MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_RELATIME, NULL) = 0
+[pid   673] mount("tmpfs", "/proc/self/fd/6", "tmpfs", 0, "size=0k") = 0
+[pid   673] mount("/dev/null", "/proc/self/fd/6", NULL, MS_BIND, NULL) = 0
+[pid   673] mount("/dev/null", "/proc/self/fd/6", NULL, MS_BIND, NULL) = 0
+[pid   673] mount("/dev/null", "/proc/self/fd/6", NULL, MS_BIND, NULL) = 0
+[pid   673] mount("tmpfs", "/proc/self/fd/6", "tmpfs", 0, "size=0k") = 0
+[pid   673] mount("/proc/self/fd/6", "/proc/self/fd/6", NULL, MS_BIND|MS_REC, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/15", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount("/proc/self/fd/6", "/proc/self/fd/6", NULL, MS_BIND|MS_REC, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/16", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount("/proc/self/fd/6", "/proc/self/fd/6", NULL, MS_BIND|MS_REC, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/17", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount("/proc/self/fd/6", "/proc/self/fd/6", NULL, MS_BIND|MS_REC, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/18", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount("/proc/self/fd/6", "/proc/self/fd/6", NULL, MS_BIND|MS_REC, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/19", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/19", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/18", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/17", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/16", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/15", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/14", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/13", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/12", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/11", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/10", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/9", NULL, MS_RDONLY|MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND|MS_RELATIME, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/8", NULL, MS_RDONLY|MS_NOSUID|MS_NODEV|MS_NOEXEC|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/proc/self/fd/5", NULL, MS_RDONLY|MS_REMOUNT|MS_BIND, NULL) = 0
+[pid   673] pivot_root(".", ".")        = 0
+[pid   673] mount(NULL, ".", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] umount2(".", MNT_DETACH)    = 0
+[pid   673] umount2(".", MNT_DETACH)    = -1 EINVAL (Invalid argument)
+[pid   673] mount(NULL, "/", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+[pid   673] mount("/dev/pts/0", "/dev/console", NULL, MS_BIND, NULL) = 0
+[pid   673] mount(NULL, "/dev/console", NULL, MS_REMOUNT|MS_BIND, NULL) = 0
+```
+
+</details>
 
 ### inside the container
 
-This is from running `sh -c 'cat /proc/self/mountinfo'` inside our container
+This is from running `sh -c 'cat /proc/self/mountinfo'` inside our container (by changing the config.json args). Note the ids are different because the container is in another mount namespace.
 
 ```
 44 33  254:0 /               /                         squashfs  
