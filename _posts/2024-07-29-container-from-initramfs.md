@@ -9,7 +9,7 @@ Here is a way to run a container from initramfs, which on my machine runs `gcc -
 
 I'm no expert here so mistakes beware.
 
-The overall setup is to use `cloud-hypervisor` to run a `crun` from an initramfs. We pass a squashfs image of the container's rootfs as a virtual disk `/dev/vda` and for this article I've just preloaded the `config.json` with the `process.args` changed to `["gcc", "--version"]` (not shown here, just use `crun spec` to generate a default one and change it).
+The overall setup is to use `cloud-hypervisor` to run `crun` from an initramfs. We pass a squashfs image of the container's rootfs as a virtual disk `/dev/vda` and for this article I've just preloaded the `config.json` with the `process.args` changed to `["gcc", "--version"]` (not shown here, just use `crun spec` to generate a default one and change it).
 
 I quickly hit a roadblock where `crun` was giving the error `pivot_root: invalid argument` (aka `EINVAL`). I did use `--no-pivot` successfully but that is less secure (or perhaps totally unsafe?) since it only uses `chroot` (see [this issue](https://github.com/containers/crun/issues/56) for some info).
 
@@ -24,7 +24,7 @@ EINVAL Either the mount point at new_root, or the parent mount of that mount poi
 EINVAL put_old is a mount point and has the propagation type MS_SHARED.
 ```
 
-I debugged the kernel (first for me!) to see this better and tracked it to this line in `fs/namespace.c` `if (new_mnt->mnt.mnt_flags & MNT_LOCKED)`. Though for what's about to come, the line `if (!mnt_has_parent(new_mnt))` would make more sense, not sure.
+I debugged the kernel (first for me!) to see this better and tracked it to [this line](https://github.com/torvalds/linux/blob/ffc253263a1375a65fa6c9f62a893e9767fbebfa/fs/namespace.c#L4209) in `fs/namespace.c` `if (new_mnt->mnt.mnt_flags & MNT_LOCKED)`. Though for what's about to come, the line `if (!mnt_has_parent(new_mnt))` would make more sense, not sure. I've also been told it would be the latter, so perhaps even if the mount wasn't locked, it would still fail because it has no parent.
 
 I then serendipitously (posted the day after I hit my error) found [this containers/bubblewrap comment](https://github.com/containers/bubblewrap/issues/592#issuecomment-2243087731) which showed a workaround (in pseudocode):
 
@@ -52,12 +52,27 @@ Download `cloud-hypervisor`, `busybox`, and `crun`. Yay static exes
 
 ```
 wget https://github.com/cloud-hypervisor/cloud-hypervisor/releases/download/v40.0/cloud-hypervisor-static
-chmod +x cloud-hypervisor-static
 wget https://www.busybox.net/downloads/binaries/1.35.0-x86_64-linux-musl/busybox
 wget https://github.com/containers/crun/releases/download/1.15/crun-1.15-linux-amd64
+chmod +x busybox cloud-hypervisor-static crun-1.15-linux-amd64
 ```
 
-Download and build a kernel, I am using 6.6.0 here with `CONFIG_SQUASHFS=y` and `CONFIG_VIRTIO*=y` (I think I started with a config from [kata](https://github.com/kata-containers/kata-containers/tree/main/tools/packaging/kernel/configs) but don't have a note of that. Those are for some older versions so I remember doing some updates when doing `make menuconfig`. I'm assuming your kernel is built at `~/Repos/linux/vmlinux`.
+Download and build a kernel, I am using 6.6.0 here with `CONFIG_SQUASHFS=y` and `CONFIG_VIRTIO*=y` I think I started with a config from [kata](https://github.com/kata-containers/kata-containers/tree/main/tools/packaging/kernel/configs) but don't have a note of that. Those are for some older versions so I remember doing some updates when doing `make menuconfig`. I'm assuming your kernel is built at `~/Repos/linux/vmlinux`.
+
+Build a squashfs image of the container:
+
+```
+id=$(podman create docker.io/library/gcc:14.1.0)
+podman export "$id" | sqfstar gcc-14.sqfs
+podman rm "$id"
+```
+
+Create a `config.json`
+
+```
+./crun-1.15-linux-amd64 spec
+# manually edit the proess.args to ["gcc", "--version"]
+```
 
 ### initramfs.file
 
@@ -226,12 +241,12 @@ kernel messages omitted (and some extra newlines inserted)
 
 The `/proc/self/mountinfo` subset quoted from [docs](https://www.kernel.org/doc/html/latest/filesystems/proc.html?highlight=mountinfo#proc-pid-mountinfo-information-about-mounts) displayed is: 
 
-1) mount ID:  unique identifier of the mount (may be reused after umount)
-2) parent ID:  ID of parent (or of self for the top of the mount tree)
-3) major:minor:  value of st_dev for files on filesystem
-4) root:  root of the mount within the filesystem
-5) mount point:  mount point relative to the process's root
-9) filesystem type:  name of filesystem of the form "type[.subtype]"
+1. mount ID:  unique identifier of the mount (may be reused after umount)
+2. parent ID:  ID of parent (or of self for the top of the mount tree)
+3. major:minor:  value of st_dev for files on filesystem
+4. root:  root of the mount within the filesystem
+5. mount point:  mount point relative to the process's root
+9. filesystem type:  name of filesystem of the form "type[.subtype]"
 
 I've labeled each snapshot of mountinfo on the right
 
@@ -306,7 +321,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 * Then some warning from the kernel about `memfd_create` that I haven't looked into
 * Then the output of `gcc --version` running in its container
 
-I was reading what kata containers do in this situation to see if they did something similar (only after I knew about the workaround), but it looks like as of writing this they [essentially use --no-pivot](https://github.com/kata-containers/kata-containers/blob/d7637f93f9ac0aa5a57496f25ffd68b5d302a7a6/src/agent/src/sandbox.rs#L148) when the kata agent is init. They are passing the `no_pivot_root` option to `runc` I believe but the effect is the same as `--no-pivot` in `crun`.
+I was reading what kata containers do in this situation to see if they did something similar (only after I knew about the workaround), but it looks like as of writing this they [essentially use `--no-pivot`](https://github.com/kata-containers/kata-containers/blob/d7637f93f9ac0aa5a57496f25ffd68b5d302a7a6/src/agent/src/sandbox.rs#L148) when the kata agent is init. They are passing the `no_pivot_root` option to `runc` I believe but the effect is the same as `--no-pivot` in `crun`.
 
 ## Extra
 
