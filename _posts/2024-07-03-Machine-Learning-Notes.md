@@ -84,6 +84,33 @@ note to self using grad everywhere but remember grad(f : n -> 1) : (1,n) vector 
   * they use a weighted skip connection so that at low noise levels, they effectively predict noise to correct input, at high noise levels, predict signal to override input
   * the skip connection effectively makes it predict the noise b/c its like img = noisy(img) - noiseof(noisy(img))
 
+
+### structured state spaces
+
+From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to the other mlsys presentation
+
+* considering signals, a sampled version of some underlying continuous process
+* trying to approximate a 1d signal over time u
+  * to do that we want to derive some state x from u that we update over time
+  * example is exp moving avg EMA where x = lerp(x, u, alpha) which has infinite context length (summarizes entire context) and is updateable in constant time
+  * HiPPO (high order polynomial projection operator) extends this idea to deriving a vector x of desired size which are coeffs to a polynomial basis and can be efficiently updated
+  * depends on a measure which defines the weighting of the past signal for how much we care about it
+  * state update is an ode (hippo operator) x'(t) = Ax(t) + Bu(t) where A (hippo matrix) is the state transition and B tells us how to mix in the signal
+  * you can then plugin the state at x(t) into the poly basis to reconstruct the signal. loss is the squared error (I think?) weighted by the measure
+  * "all hippo operators have displacement rank <= 3 so ahve linear-time matrix-vector multiplication" todo what is displacement rank
+* if we use hippo in a layer/model, we are increasing dimensionality from 1 -> d (where d is the degree of poly basis)
+  * so instead we output a 1d y = Cx + Du where we have (1,d)(d,1) + (1)(1) so dot the state with a vector and add a scalar multiple of the input (skip connection)
+* the x' = Ax + Bu and y = Cx + Du is an SSM (in most general form, ABCD can be time dependent)
+  * output y(t+1) can be computed online, but when we're training and we know the whole sequence, would like to avoid
+  * whole output y(t) can be computed convolutionally y = conv(u, K) skipping the computation of the state signal x(t) (though computing K is still slow)
+    * K(i) = C matpow(A,i) B for i in L so yeah computing K naively is real slow
+  * we then discretize ABCD for some step size
+* structured state space model gives structure to the ABCD which lets us compute K efficiently
+* on continuous signals, s4 has good zero-shot perf on resampled signals which tanks discrete methods (though is that passing in the step size into the discretization method?)
+* [https://srush.github.io/annotated-s4/](https://srush.github.io/annotated-s4/)
+  * A is the hippo matrix, B C step-size and scalar D are learned
+  * stack one SSM per input dimension to get a layer from C -> C
+
 # Links
 
 * [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
@@ -134,6 +161,8 @@ note to self using grad everywhere but remember grad(f : n -> 1) : (1,n) vector 
 * [NICE: Non-linear Independent Components Estimation](https://arxiv.org/abs/1410.8516v6)
   * affine coupling layer, u, v = split(x); y = concat(u, mul(v, f(v)) + g(v))
   * didn't read much, came via [vid](https://youtu.be/DDq_pIfHqLs?t=267)
+* [HiPPO: Recurrent Memory with Optimal Polynomial Projections](https://arxiv.org/abs/2008.07669)
+  * todo
 * [https://github.com/lucidrains/x-transformers](https://github.com/lucidrains/x-transformers)
 * [https://github.com/karpathy/minGPT/blob/master/mingpt/model.py](https://github.com/karpathy/minGPT/blob/master/mingpt/model.py)
 
