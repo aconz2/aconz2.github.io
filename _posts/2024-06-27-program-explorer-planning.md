@@ -417,6 +417,8 @@ file /config.json config.json 0444 0 0
 
 ```
 166.8 +- 5.0 ms
+130 +- 5 ms with --console off
+116.8 +- 4.7 ms with --console off kernel 6.2 and config from cloud-hypervisor and zstd squashfs
 ```
 
 ## firecracker
