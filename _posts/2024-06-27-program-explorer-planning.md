@@ -57,6 +57,19 @@ Also maybe eventually support different kernel versions. And even baremetal if p
 
 Of course, I'd like this to work in a self-hosted manner as well so that you can bring your own compute. I want to keep that in mind but not sure it will be the primary guiding principle in development or secondary. Just not sure yet because there are loads of variations. I know lots of orgs give out cloud accounts now so that could be nice if you could plug it in to that but that's a ton of complexity in itself. If you're just running on your own machine, that is still different than running the worker on a dedicated machine which is what the production setup would be like.
 
+On container image file sharing, I thought of one possible simple way to share files between container images from sqfs is to build a combined image prefixing each rootfs with `/a`, `/b` etc and then we mount the image somewhere like `/mnt/combined` and then bind mount the chosen one to `/run/bundle/rootfs`. Because sqfs (and I think erofs but haven't played with that yet) do same-file sharing (erofs also supports block sharing but then you don't get compression so not sure the tradeoff), you get savings. A quick test:
+
+```
+gcc-13.3.0.sqfs     421.45 Mb (compressed)    1347.61 Mb (uncompressed)      22806 files       2850 dirs
+gcc-14.1.0.sqfs     432.04 Mb (compressed)    1381.28 Mb (uncompressed)      22894 files       2852 dirs
+
+20179 files 832.07 Mb (uncompressed) shared = 60.24%
+```
+
+I don't know if you can append (you should be able to by choosing a prefix greater than all before since they are both (I think) sorted) to either sqfs or erofs but that would make a nice incremental update when a new version came out.
+
+Okay tons more tiny things I'm obsessing over so need to write it out. First, decide on an input/output format for both the host/guest interface and the client/server interface. I'd like to do something that supports multiple files both in and out, perms and mtime aren't that interesting to me right now so mainly file hierarchy and contents. Considerations are what is good to support in browser, can the browser craft the input payload and can we trust that payload or do we need to verify it (likely verify) and/or should we just build the payload on the server. Let's say the client sends the files as a multipart upload and the server creates a squashfs with them, then we can mount them in the vm and we're good. If we're really reaching, we'd probably try to pre-boot the workers and hotplug the disks for container and input payload when we need them but would need to benchmark to see if that is actually worthwhile (probably is faster since it seems like min kernel boot time is >50ms) but we should try the easy thing first with less moving pieces ie just one exec call vs using the http api (though that is also prolly not as bad as I think). So then for output, we can mount a size limited tmpfs for all the output files (though then you can't just `mv` an output file from the working dir to the output dir...) or we just have to verify the output size as we're exporting it. Anyways either from a predefined list of files to include (do we allow globs?) we build a cpio/zip/tar/http-multipart/sqfs/erofs something inside the guest and get it out to the host either via vsock or pmem (can we pass a shmem file to pmem to be fully memory backed there?) and then send that back to the client. The client can then iterate over and show things. multipart response is probably the most native to the browser (though then there's possible filename encoding mismatch)  as it will already have split the buffers. Okay but I can't actually figure out if FormData responses to the client are a thing in the browser? I see `Response.formData() -> Promise<FormData>` that is advertised as for service workers intercepting requests and also nothing about the return type of `FormData.get()`, like what if it is a blob? For a single multipart response, we also get all-or-nothing gzip (or potentially zstd if supported) compression between client and server; but it would get handled not in javascript which is a plus. If we send a blob of sqfs or erofs and parse it in the browser, assuming no compression in the payload itself so we also get transfer compression, then we could probably write a little wrapper to unpack the format, it doesn't look too crazy. I do wonder (over engineering beware) whether the blob gets shared if we extract a subsequence? I think if we convert to a string to show in an editor it will almost definitely get copied.
+
 # some random benchmarking
 
 fedora 39, 5950x
@@ -334,6 +347,12 @@ file /config.json config.json 0444 0 0
 ## cloud hypervisor to custom initramfs running gcc
 
 happened across [this comment](https://github.com/containers/bubblewrap/issues/592#issuecomment-2243087731) with very good timing! solved the `pivot_root` error so don't need --no-pivot
+
+update: wrote a [small wrapper](https://gist.github.com/aconz2/3d5bd92b4027ccef11db8215878f7112) to avoid the shell chain so you can just do `parent_rootfs /abc crun ...`
+
+experimented a bit with `--pmem file=gcc.sqfs,discard_writes=on` (though note that file has to be multiple of 2M, zero padding the sqfs seemed to work) and then you mount `/dev/pmem0`. Is a tiny bit faster for something like `find /mnt/bundle/rootfs > /dev/null`
+
+want to test later with erofs vs sqfs
 
 ```
 #!/bin/busybox sh
