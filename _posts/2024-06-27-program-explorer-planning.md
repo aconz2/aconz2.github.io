@@ -70,6 +70,57 @@ I don't know if you can append (you should be able to by choosing a prefix great
 
 Okay tons more tiny things I'm obsessing over so need to write it out. First, decide on an input/output format for both the host/guest interface and the client/server interface. I'd like to do something that supports multiple files both in and out, perms and mtime aren't that interesting to me right now so mainly file hierarchy and contents. Considerations are what is good to support in browser, can the browser craft the input payload and can we trust that payload or do we need to verify it (likely verify) and/or should we just build the payload on the server. Let's say the client sends the files as a multipart upload and the server creates a squashfs with them, then we can mount them in the vm and we're good. If we're really reaching, we'd probably try to pre-boot the workers and hotplug the disks for container and input payload when we need them but would need to benchmark to see if that is actually worthwhile (probably is faster since it seems like min kernel boot time is >50ms) but we should try the easy thing first with less moving pieces ie just one exec call vs using the http api (though that is also prolly not as bad as I think). So then for output, we can mount a size limited tmpfs for all the output files (though then you can't just `mv` an output file from the working dir to the output dir...) or we just have to verify the output size as we're exporting it. Anyways either from a predefined list of files to include (do we allow globs?) we build a cpio/zip/tar/http-multipart/sqfs/erofs something inside the guest and get it out to the host either via vsock or pmem (can we pass a shmem file to pmem to be fully memory backed there?) and then send that back to the client. The client can then iterate over and show things. multipart response is probably the most native to the browser (though then there's possible filename encoding mismatch)  as it will already have split the buffers. Okay but I can't actually figure out if FormData responses to the client are a thing in the browser? I see `Response.formData() -> Promise<FormData>` that is advertised as for service workers intercepting requests and also nothing about the return type of `FormData.get()`, like what if it is a blob? For a single multipart response, we also get all-or-nothing gzip (or potentially zstd if supported) compression between client and server; but it would get handled not in javascript which is a plus. If we send a blob of sqfs or erofs and parse it in the browser, assuming no compression in the payload itself so we also get transfer compression, then we could probably write a little wrapper to unpack the format, it doesn't look too crazy. I do wonder (over engineering beware) whether the blob gets shared if we extract a subsequence? I think if we convert to a string to show in an editor it will almost definitely get copied.
 
+Okay getting a bit closer on transferring files into and out of the guest container. The setup I have working so far looks like this:
+
+```
+# host vm prepares input files into a squashfs with structure stdin,dir/...
+# also an empty output file
+# both need to be truncated to the nearest 2M size for use with cloud hypervisor --pmem
+# we pass 3 pmem files:
+#   /dev/pmem0 the rootfs sqfs
+#   /dev/pmem1 the input sqfs
+#   /dev/pmem2 the output empty file
+
+# guest vm directories
+# /mnt/work
+# /mnt/rootfs
+# /mnt/upper/{scratch,input,output}
+# 
+# /run/{intput,output}
+# /run/bundle/rootfs
+
+mount -t squashfs -o loop /dev/pmem0 /mnt/rootfs
+mount -t squashfs -o loop /dev/pmem1 /run/input
+mount -t tmpfs -o size=2M none       /run/output
+mount -t tmpfs -o size=2M none       /mnt/upper/scratch
+
+mkdir /run/output/dir
+
+mount -t overlay -o lowerdir=/mnt/rootfs,upperdir=/mnt/upper,workdir=/mnt/work none /run/bundle/rootfs
+
+# the config.json in /run/bundle has mounts for:
+# tmpfs on /scratch
+# bind /run/output/dir:/output
+# bind /run/input/dir:/input
+/bin/crun run --bundle /run/bundle containerid-1234 \
+        < /run/input/stdin \
+        > /run/output/stdout \
+       2> /run/output/stderr
+echo $? > /run/output/exit
+
+(cd /run/output; busybox find . -print -depth | cpio -H newc -o > /dev/pmem2)
+```
+
+Starting with the input side, the host creates a squashfs of the stdin and input files under `/dir`. This gets passed as pmem1. Anything under `/dir` will be available at `/input` in the container. We use the file `stdin` in this sqfs to be the container's stdin. This is a non-interactive stdin and I think is useful but is maybe pointless.
+
+For the output side, the guest creates a tmpfs `/run/output` and a subdir `/run/output/dir`. We capture stdout and err to `/run/output/std{out,err}` and mount `/run/output/dir` to the container's `/output`. We then create an archive (cpio for now) of everything in `/run/output` and write it to pmem2. This will terminate if it exceeds the size of the pmem2 file which is good.
+
+Because the container's rootfs is a readonly squashfs filesystem, we can't mount any new directories like `/input`, so we have to create an overlayfs with the mountpoints we want which is where `/mnt/upper` comes in. This gives us the three root dirs `{input,output,scratch}` to overlay on the container's rootfs. (TODO: can we limit the size of `/mnt/work` somehow?).
+
+For both the input and output side, we use the root (relative root) as a "privileged" place to put `std{in,out,err}` and `exit` files and anything under `dir` is what gets mounted into the container at `/{input,output`.
+
+So when a new request comes in, we create a squashfs file from the request stream and truncate it to the nearest 2M. We create an empty output file at whatever our limit size is to the nearest 2M. We run the worker. We send the file archive to the client making sure to cut it short and not send the oversized pmem file in its entirety. cpio has a trailing file suitable for this purpose but not sure about others yet.
+
 # some random benchmarking
 
 fedora 39, 5950x
