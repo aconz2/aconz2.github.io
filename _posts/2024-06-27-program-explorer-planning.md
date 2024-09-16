@@ -131,6 +131,8 @@ Multipart form data seems a mess and not worthwhile. I can't really find a good 
 
 That also makes me think of whether it is better to have the timeout on the cloud-hypervisor process on the host or on the crun process on the guest or both? Certainly host side makes sense, not sure guest also makes sense.
 
+Okay bencode is actually annoying b/c of the variable sized reads, so I'm maybe just going with le bytes, u16 for the path and u32 for the data. Then you can do a `m = read(2)` to the get the path, then `n = read(m + 4)` to get the path and data size, then a `copy_file_range`. And actually what I'm realizing is how annoying not having something like `mkdir -p` built into the kernel is and why (besides being able to set the extra mode bits etc) archive programs have dir's as an entry and expect them to come before their children. Then you just do what the thing says and if it fails it isn't your fault. Otherwise, you're responsible for figuring out and/or keeping track of which dirs need to be created.
+
 # some random benchmarking
 
 fedora 39, 5950x
