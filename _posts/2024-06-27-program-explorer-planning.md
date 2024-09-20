@@ -5,6 +5,8 @@ date:   2024-06-27
 categories:
 ---
 
+Note: this has become more of a brain dump that I'm updating over time, so reader beware
+
 I've been cooking up some ideas for a project tentatively called Program Explorer which is like Compiler Explorer but for any container. Initially the containers would be of a similar text-in to text-out as for compilers, but we can imagine supporting arbitrary outputs like images in the future. The user edits some input file(s), chooses a container, and gets the output sent back to them in the browser.
 
 Many projects offer playgrounds for programming languages or other tools, PE (program explorer) would make it super easy to create new playgrounds.
@@ -132,6 +134,8 @@ Multipart form data seems a mess and not worthwhile. I can't really find a good 
 That also makes me think of whether it is better to have the timeout on the cloud-hypervisor process on the host or on the crun process on the guest or both? Certainly host side makes sense, not sure guest also makes sense.
 
 Okay bencode is actually annoying b/c of the variable sized reads, so I'm maybe just going with le bytes, u16 for the path and u32 for the data. Then you can do a `m = read(2)` to the get the path, then `n = read(m + 4)` to get the path and data size, then a `copy_file_range`. And actually what I'm realizing is how annoying not having something like `mkdir -p` built into the kernel is and why (besides being able to set the extra mode bits etc) archive programs have dir's as an entry and expect them to come before their children. Then you just do what the thing says and if it fails it isn't your fault. Otherwise, you're responsible for figuring out and/or keeping track of which dirs need to be created.
+
+I did a little side testing on the archive front and put that work in a repo [archive-testing](https://github.com/aconz2/archive-testing). This supersedes whatever I was thinking above.
 
 # some random benchmarking
 
