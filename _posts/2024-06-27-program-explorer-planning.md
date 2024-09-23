@@ -137,9 +137,13 @@ Okay bencode is actually annoying b/c of the variable sized reads, so I'm maybe 
 
 I did a little side testing on the archive front and put that work in a repo [archive-testing](https://github.com/aconz2/archive-testing). This supersedes whatever I was thinking above.
 
+I realized that I can use a single pmem file for both the input and output (assuming input and output max file size is the same, or I take the max of them). The guest reads the input file and unpacks the archive, runs the container, then builds an archive and puts it in the output file. That is nice.
+
+And I think I will go with a slightly more complicated pmem file format to combine the config and misc stuff and the archive. That format from the client is `<json blob size><json blob><archive_blob>` of total length `content_length` (the header). On the server, we parse the json blob to pull out the requested container etc. and then write into the pmem file `<json blob size><json blob><archive_blob_size><archive_blob>`. This json (or other format) blob will have any information the guest init system needs to prepare the container. `archive_blob_size` is computed from the `content-length` header. One aspect of this system is that the webserver only needs to read the first json blob bytes, compute a new json blob, write it out, then pipe the rest of the request stream into a file which can be zero-copy (well really one copy but depends on how you count; and maybe not really because of encryption). Remember we need to write the `archive_blob_size` because the pmem file is truncated up to 2MB. We can compute the size needed for this file once we've generated the json that goes to the guest. Once the guest has finished running the container, it writes a similar format back into the same pmem file of `<archive_blob_size><json blob size><json blob><archive_blob>` which is again a file of longer length because of the truncation. This output json blob can hold things like exit status, time spent, other stats etc. We can then compute the response `content-length`, strip the `archive_blob_size` and stream the rest straight from the file. So the flow of the server takes a nice shape of just passing these input/output files around; server streams them into a file, that goes to a queue, workers take in a file, execute, and put back a file, the output file then gets streamed back. We'll need to bound the total number of in-flight files based on memory capacity and whatever limit per request we set. This also means we might have open but waiting requests that haven't started streaming into a file yet because they are waiting for a file to be available.
+
 # some random benchmarking
 
-fedora 39, 5950x
+fedora 39, 5950x, ddr4 2666 MT/s (dmidecode)
 
 ```
 echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
@@ -148,7 +152,7 @@ echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governo
 ## on bare system
 
 ```
- taskset -c 0 ./hyperfine-v1.18.0-x86_64-unknown-linux-gnu/hyperfine --shell=none --warmup=500  'gcc --version'
+taskset -c 0 ./hyperfine-v1.18.0-x86_64-unknown-linux-gnu/hyperfine --shell=none --warmup=500  'gcc --version'
 # 645.2 us +- 26.5 us
 ```
 
