@@ -9,3 +9,6 @@ github_username:  aconz2
 
 # Build settings
 markdown: kramdown
+
+plugins:
+  - jekyll-feed

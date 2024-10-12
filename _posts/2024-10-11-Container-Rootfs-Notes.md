@@ -11,6 +11,8 @@ The rootfs of a container is the set of all files in the container image, exclud
 
 Our running example will be `gcc:14.1.0` so do a `podman pull docker.io/library/gcc:14.1.0`
 
+(Note I'm using a early hacky version of a tool that runs each bash script block and updates the contents of the following code block on each file save. I thought there was a tool for this but I couldn't find a good one on a quick look. I'm thinking about caching results and/or a better formatting to better display the output)
+
 We can put all these things in one directory like so:
 
 ```bash
@@ -24,6 +26,7 @@ ls /tmp/gcc14-save
 blobs
 index.json
 oci-layout
+
 ```
 
 (Sidenote, sometimes `podman save` also exports the merged tree...)
@@ -55,9 +58,10 @@ b9d7a9517fae9525c2e2679930e7b0c611a468762a4788b70f306b6c074b3553  index.json
     }
   ]
 }
+
 ```
 
-We grab the digest from `index.json` and look up the `manifest` in the `blobs` dir. Then the manifest can be used to lookup the image `config` ([docs](https://github.com/opencontainers/image-spec/blob/main/config.md)). Note that the `manifest` lists tar layers which do match those in the `config` layers. This is because the manifest are digests on compressed tar files and the config on uncompressed.
+We grab the digest from `index.json` and look up the `manifest` ([docs](https://github.com/opencontainers/image-spec/blob/main/manifest.md)) in the `blobs` dir. Then the manifest can be used to lookup the image `config` ([docs](https://github.com/opencontainers/image-spec/blob/main/config.md)). Note that the `manifest` lists tar layers which do not match those in the `config` layers. This is because the manifest are digests on compressed tar files and the config on uncompressed.
 
 ```bash
 cd /tmp/gcc14-save
@@ -174,6 +178,7 @@ image config is sha256/339722f412f60e6c1f0397272dbf359041ca6facae6f8982852e5c9ce
 }
 The layer from the manifest is sha256/7ca350407cbfcb9d25b667d38417c1706bbf0feb3fd92fd8449e8c07bc0edc1c and decompresses to the config layer f6faf32734e0870d82ea890737958fe33ce9ddfed27b3b157576d2aadbab3322
 This should equal sha256:f6faf32734e0870d82ea890737958fe33ce9ddfed27b3b157576d2aadbab3322
+
 ```
 
 If we look at the start of this first layer, we see that most of these things are stored in the tar archive with uid/gid owner of 0/0. This makes sense because the rootfs we want to create for the container is just like the rootfs of a regular running system. On my host system we see that eg bin is a symlink to usr/bin and its owned by 0/0.
@@ -199,6 +204,7 @@ lrwxrwxrwx 0/0               0 2022-06-17 10:35 etc/alternatives/awk.1.gz -> /us
 
 total 52
 lrwxrwxrwx.   3 0 0    7 Jan 12  2024 bin -> usr/bin
+
 ```
 
 However, when it comes time to run a container, these tar layers have to get unpacked (caveat, they don't _have_ to but for example podman defaults to when using overlay) (if they haven't already been unpacked) and that presents a problem because if we're running as a regular user 1000:
@@ -209,9 +215,10 @@ id
 
 ```
 uid=1000(andrew) gid=1000(andrew) groups=1000(andrew),10(wheel) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+
 ```
 
-then we can't unpack a file and chown it to root
+and we can't unpack a file and chown it to root
 
 ```bash
 cd /tmp
@@ -222,12 +229,11 @@ chown 0:0 foo
 ```
 
 chown: changing ownership of 'foo': Operation not permitted
-
 ```
 
 By default, when tar encounters a file with 0/0 in the archive and you're running as 1000, it just unpacks it as your user! This was surprising to me.
 
-To make this a bit easier to see, we'll now export a flattened archive of all these layers combined (because omg the combining process of for example using `.wh.` prefix to delete files in layers below is kinda crazy; these have to then be unpacked as a character device 0/0 (device major/minor) [see docs](https://docs.kernel.org/filesystems/overlayfs.html#whiteouts-and-opaque-directories)).
+To make this a bit easier to see, we'll now export a flattened archive of all these layers combined (because omg the combining process of for example using `.wh.` prefix to delete files in layers below is kinda crazy; these have to then be unpacked as a character device 0/0 (device major/minor) [see docs](https://docs.kernel.org/filesystems/overlayfs.html#whiteouts-and-opaque-directories) when using overlayfs).
 
 ```bash
 cd /tmp/gcc14-save
@@ -239,6 +245,7 @@ tar tvf blobs/$last_layer | grep '\.wh\.'
 ```
 ---------- 0/0               0 1969-12-31 18:00 usr/bin/.wh.g++
 ---------- 0/0               0 1969-12-31 18:00 usr/bin/.wh.gcc
+
 ```
 
 so we see the last layer includes two of these whiteout files. If we have a running instance and are using overlayfs, we can peek at it with something like
@@ -307,6 +314,7 @@ lrwxrwxrwx.  1 1000 1000    7 May 12 19:00 bin -> usr/bin
 drwxr-xr-x.  2 1000 1000   40 Jan 28  2024 boot
 drwxr-xr-x.  2 1000 1000   40 May 12 19:00 dev
 drwxr-xr-x. 46 1000 1000 2020 May 14 00:45 etc
+
 ```
 
 Now we see that the combined tar still has 0/0 owning things but when we unpack with tar (sans sudo), things get unpacked as 1000/1000.
@@ -334,6 +342,7 @@ drwxrwsr-x 0/50              0 2024-01-28 15:20 var/local/
 -rw-rw-r-- 0/43              0 2024-05-12 19:00 var/log/lastlog
 -rw-rw-r-- 0/43              0 2024-05-12 19:00 var/log/wtmp
 drwxrwsr-x 0/8               0 2024-05-12 19:00 var/mail/
+
 ```
 
 But when we unpacked, those too get 1000/1000:
@@ -344,6 +353,7 @@ ls -ln /tmp/gcc14-unpacked/etc/gshadow
 
 ```
 -rw-r-----. 1 1000 1000 373 May 13 21:54 /tmp/gcc14-unpacked/etc/gshadow
+
 ```
 
 But we can check inside the container things are 0/42 as they should be:
@@ -354,5 +364,120 @@ podman run --rm gcc:14.1.0 ls -ln /etc/gshadow
 
 ```
 -rw-r-----. 1 0 42 373 Jul 23 06:06 /etc/gshadow
+
 ```
 
+Now let's check what that file looks like in the unpacked version by podman used in the overlayfs
+
+
+```
+overlay_layers=$(podman inspect aec3c2b7b25c | jq -r '.[0].GraphDriver.Data.LowerDir' | tr ':' '\n')
+
+for layer in $overlay_layers; do
+    find $layer -name gshadow -printf "%U/%G %p\n" 2> /dev/null
+done
+```
+
+```
+# manually removing some path prefix
+1000/524329 overlay/44ca1724bc422b0cebbc65edd18394ebfa5cf1e2cadeac49b50059c6a474542c/diff/etc/gshadow
+1000/524329 overlay/bbe1a212f7e9f1baaef62491a51254f3adda514c22632ea719f62713fad80f77/diff/etc/gshadow
+```
+
+So we see that this file comes from two layers with the first one being the topmost so it is the real file we see inside the container. And it has group owner 524329! What?
+
+```
+# do a `grep -a podman | grep gcc` to get a pid
+echo '-- uid_map --'
+cat /proc/84843/uid_map
+echo '-- gid_map --'
+cat /proc/84843/gid_map
+```
+
+```
+-- uid_map --
+         0       1000          1
+         1     524288      65536
+-- gid_map --
+         0       1000          1
+         1     524288      65536
+```
+
+Here we've got a `uid_map` (`man 7 user_namespaces`) which shows a mapping of (when I say "in the container" I mean "in the user namespace of the container", and "on the host" means "in the user namespace of what launched the container")
+
+* starting at uid 0 in the container, map 1 uid starting at uid 1000 on the host
+* starting at uid 1 in the container, map 65536 uids starting at uid 524288 on the host
+* likewise for gid
+
+This magic number 524288 comes from the system configured subuid (`man 5 subuid`)
+
+```bash
+cat /etc/subuid
+```
+
+```
+andrew:524288:65536
+
+```
+
+which says that user `andrew` can use 65536 uids starting at 524288. On a multi-user system all running containers, we would assign each user a non-overlapping range of subuids so that each user's containers would have unique uids.
+
+And so the file `etc/gshadow` got unpacked by podman to `1000/524329` which should map to `0/42` and it does because
+
+```bash
+echo $((1000 - 1000))
+echo $((524329 - 524288 + 1))
+```
+
+```
+0
+42
+
+```
+
+Wrapping up, the problem I was seeing was that I was mounting a squashfs archive for the rootfs which was produced from the tar archive like `gcc14-export.tar` so the uid/gid on things was 0/0 or 0/42 for gshadow. I was then running with a `uid_map` of `0 1000 1` since I want uid 0 in the container to be uid 1000 on the host (well guest vm in this case). That raises a problem because after mapping, the kernel sees a process in the container as uid 1000 but files in the rootfs as uid 0, and because nothing maps to host uid 0, the kernel says all these files are owned by `nobody` ie 65534. We can see the same effect if we do:
+
+```bash
+unshare --map-users=0:1000:1 ls -ln / | head -n 5
+unshare --map-users=0:1000:1 ls -l / | head -n 5
+```
+
+```
+total 52
+lrwxrwxrwx.   3 65534 65534    7 Jan 12  2024 bin -> usr/bin
+drwxr-xr-x.   7 65534 65534 4096 Oct 10 10:51 boot
+drwxr-xr-x.  20 65534 65534 4400 Oct 10 14:54 dev
+drwxr-xr-x.   1 65534 65534 4630 Oct 10 12:09 etc
+total 52
+lrwxrwxrwx.   3 nfsnobody nfsnobody    7 Jan 12  2024 bin -> usr/bin
+drwxr-xr-x.   7 nfsnobody nfsnobody 4096 Oct 10 10:51 boot
+drwxr-xr-x.  20 nfsnobody nfsnobody 4400 Oct 10 14:54 dev
+drwxr-xr-x.   1 nfsnobody nfsnobody 4630 Oct 10 12:09 etc
+
+```
+
+Note that 65534 is called `nfsnobody` on my system because there is no entry in `/etc/passwd` for this uid.
+
+```bash
+podman run --rm --uidmap 0:1000:1 gcc:14.1.0 bash -c 'grep nobody /etc/passwd; grep nogroup /etc/group; ls -ld /var/cache/apt/archives/partial/ ; ls -l /etc/gshadow'
+```
+
+```
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+nogroup:x:65534:
+drwx------. 1 nobody root 0 Jul 23 06:07 /var/cache/apt/archives/partial/
+-rw-r-----. 1 root nogroup 373 Jul 23 06:06 /etc/gshadow
+
+```
+
+One thing to note is that when using overlayfs, podman can only reuse unpacked layers for a container if they have the same uid map, because that impacts what uid/gid the files need to be chown'd to so that they map in appropriately. I believe that podman will use reflink if your container storage dir is on a supported fs like btrfs or xfs. This means that even though it has to duplicate all layers so that it can chown them differently, the file contents will be shared underneath.
+
+```
+→ du -s /home/andrew/.local/share/containers/storage/overlay 2> /dev/null
+40G	/home/andrew/.local/share/containers/storage/overlay
+→ btrfs filesystem du -s /home/andrew/.local/share/containers/storage/overlay 2> /dev/null
+     Total   Exclusive  Set shared  Filename
+  38.33GiB    28.26GiB     4.72GiB  /home/andrew/.local/share/containers/storage/overlay
+```
+
+In conclusion, I think my plan is to simply offset every uid by 1000 in the sqfs and map in uid 1000+ to the container. Of course there isn't an option for that in mksqfs, but I might look at adding one. This does raise an open question for me which is how does podman unpack tar layers and chown things to something without being root, I guess it must do so in a user namespace?
