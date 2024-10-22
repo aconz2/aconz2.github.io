@@ -147,7 +147,18 @@ Note about http that I didn't understand before: content-length is not always se
 
 Note about cloud-hypervisor api usage. Basically if you start a ch instance and immediately send an api request like vm.add-pmem, the first response I was getting was `Ok(None)` and the second was `Ok(Some("{\"id\":\"_pmem0\",\"bdf\":\"0000:00:03.0\"}"))` which is down to whether the vm is "ready" in `vmm/src/lib.rs` `fn vm_add_pmem`.
 
-Okay so the uid/gid of the rootfs in the container is wrong. I'm running crun as 1000/1000 on the guest and the uid/gid in the runtime config is set for 0/0 so that makes a uidmap/gidmap of 0 1000 1. Very similar to podman but it also maps in a bunch of uids from /etc/subuid to give uids to uid 1+. But now digging into the rootfs, in podman everything is owned 0/0 but on my guest it is 65534 nobody/nogroup. Looking at podman the layers unpacked in `~/.local/share/containers/storage/overlay/*/diff` the uid/gid is 1000! But inside the tar of the actual layer, they are 0/0, so podman must be relabeling on unpack. I think you can also do relabeling on bind or something? Yes [idmappings](https://docs.kernel.org/filesystems/idmappings.html) `mount_setattr` "ID-mapped mounts" and in podman `CreateIDMappedMount`. Though maybe since we'll always be executing as a known 1000 uid we can just do this remapping up front when creating a sqfs of the rootfs (assuming we stick with sqfs). todo confirm theory about how podman is doing the remapping by looking at what uid is on var/cache/apt/archives/partial which has uid 42 (user `_apt`)
+Okay so the uid/gid of the rootfs in the container is wrong. I'm running crun as 1000/1000 on the guest and the uid/gid in the runtime config is set for 0/0 so that makes a uidmap/gidmap of 0 1000 1. Very similar to podman but it also maps in a bunch of uids from /etc/subuid to give uids to uid 1+. But now digging into the rootfs, in podman everything is owned 0/0 but on my guest it is 65534 nobody/nogroup. Looking at podman the layers unpacked in `~/.local/share/containers/storage/overlay/*/diff` the uid/gid is 1000! But inside the tar of the actual layer, they are 0/0, so podman must be relabeling on unpack. I think you can also do relabeling on bind or something? Yes [idmappings](https://docs.kernel.org/filesystems/idmappings.html) `mount_setattr` "ID-mapped mounts" and in podman `CreateIDMappedMount`. Though maybe since we'll always be executing as a known 1000 uid we can just do this remapping up front when creating a sqfs of the rootfs (assuming we stick with sqfs). todo confirm theory about how podman is doing the remapping by looking at what uid is on var/cache/apt/archives/partial which has uid 42 (user `_apt`). Update: wrote a blog post about this and right now going with offsetting everything in the sqfs id table by 1000 and always using user 1000 in the proc
+
+Slightly changed the way stdin works so its a bit asymmetric with stdout/stderr. The way those work right now is we always capture like `crun -v /run/output/dir:/run/pe/output ... > /run/output/stdout 2> /run/output/stderr` (note crun doesn't take volume mounts like that but same effect). And then we send back the archive of `/run/output` so user's files always go under `dir/` (could use a better name). Initially stdin was working this way but we can't really rely on the archive coming in having a `stdin, dir/` structure so instead stdin can be optionally specified as a name of a file in the archive. So we unpack whatever into `/run/input` and then (if it exists and isn't a traversal attack) use `/run/input/$stdin`. Altogether that looks like:
+
+```bash
+pearchive unpack incoming.ar /run/input
+crun -v /run/output/dir:/run/pe/output ... \
+    <  /run/input/$stdin \
+    >  /run/output/stdout \
+    2> /run/output/stderr
+pearchive pack /run/output outgoing.ar
+```
 
 # some random benchmarking
 
