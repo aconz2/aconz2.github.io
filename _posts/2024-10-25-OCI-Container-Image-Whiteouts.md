@@ -111,10 +111,6 @@ layer=4  mtime=0 mode=000755 type=REGTYPE  z/.wh..wh..opq
 
 Okay wow first thing we see is that our layers 1,2,3 all have a `run` dir added to them, that's weird, and layer 1 has `etc` stuff and `proc` and `sys` dirs. This was actually unexpected so I'm glad we're going through this. These are mounts/dirs that podman mounts into the container by default and while we theoretically can get rid of the etc with `--dns=none --no-hosts --no-hostname`, the next thing shows that they are still there... and they are zero sized above and below. Not sure what is going on there. But notice that `run` "has" to be included in each layer because the mtime changes (though it doesn't change between 1 and 2 and it is still there!).
 
-<details>
-
-<summary>etc stuff still there</summary>
-
 ```bash
 cd /tmp/article
 inspecttar.py --layer 1 oci-no-etc/index.json 2>/dev/null | grep etc
@@ -129,8 +125,6 @@ layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 un
 layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/resolv.conf 
 ...
 ```
-
-</details>
 
 And in layer 2, we see `x/.wh.a` is a whiteout deletion marker file for the file `x/a`. In layer 3 we see `.wh.y` whiteout for the dir `y`.
 
@@ -219,10 +213,10 @@ inspecttar.py afile.tar | sed 's_{\|, _\n  _g'  # make the output a bit less wid
 user.myxattr="value"
 
 afile.tar: format=PAX_FORMAT
-size=         0 mtime=1729895624.2763104 mode=000644 type=REGTYPE uid/gid=1000/1000 uname/gname=andrew/andrew dev=0,0 
-  'mtime': '1729895624.276310491'
-  'atime': '1729895624.276310491'
-  'ctime': '1729895624.277310492'
+size=         0 mtime=1729896006.5087674 mode=000644 type=REGTYPE uid/gid=1000/1000 uname/gname=andrew/andrew dev=0,0 
+  'mtime': '1729896006.508767422'
+  'atime': '1729896006.508767422'
+  'ctime': '1729896006.508767422'
   'SCHILY.xattr.user.myxattr': 'value'
   'SCHILY.xattr.security.selinux': 'unconfined_u:object_r:user_tmp_t:s0\x00'} afile 
 ```
