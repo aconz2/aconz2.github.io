@@ -63,53 +63,53 @@ done
 ```
 -- layer 0 sha256:a77743c2174af437de8b6d59e4761b45a3761b332bcbbeeb1e0b4af6aa37d1c2
 oci-1/blobs/sha256/a77743c2174af437de8b6d59e4761b45a3761b332bcbbeeb1e0b4af6aa37d1c2: format=PAX_FORMAT
-layer=0 size=         0 mtime=1727386302 mode=000755 type=DIRTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} . 
-layer=0 size=         0 mtime=1727386302 mode=000755 type=DIRTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin 
-layer=0 size=   1029688 mtime=1727386302 mode=000755 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/[ 
-layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/[[ 
-layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/acpid 
-layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/add-shell 
-layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/addgroup 
-layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/adduser 
+layer=0 size=         0 mtime=1727386302 mode=000755 type=DIRTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} .
+layer=0 size=         0 mtime=1727386302 mode=000755 type=DIRTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin
+layer=0 size=   1029688 mtime=1727386302 mode=000755 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/[
+layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/[[
+layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/acpid
+layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/add-shell
+layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/addgroup
+layer=0 size=         0 mtime=1727386302 mode=000755 type=LNKTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} bin/adduser
 ...
 -- layer 1 sha256:d7c583b6274414e2def0073e109a86c0fb823d34a6bb017e9def5cc69a000b28
 oci-1/blobs/sha256/d7c583b6274414e2def0073e109a86c0fb823d34a6bb017e9def5cc69a000b28: format=PAX_FORMAT
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  etc 
-layer=1  mtime=1729887075 mode=000700 type=REGTYPE  etc/hostname 
-layer=1  mtime=1729887075 mode=000700 type=REGTYPE  etc/hosts 
-layer=1  mtime=1729887075 mode=000700 type=REGTYPE  etc/resolv.conf 
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  proc 
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  run 
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  sys 
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  x 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  x/a 
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  y 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  y/a 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  y/b 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  y/c 
-layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  z 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  z/a 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  z/b 
-layer=1  mtime=1729887075 mode=000644 type=REGTYPE  z/c 
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  etc
+layer=1  mtime=1729887075 mode=000700 type=REGTYPE  etc/hostname
+layer=1  mtime=1729887075 mode=000700 type=REGTYPE  etc/hosts
+layer=1  mtime=1729887075 mode=000700 type=REGTYPE  etc/resolv.conf
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  proc
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  run
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  sys
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  x
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  x/a
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  y
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  y/a
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  y/b
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  y/c
+layer=1  mtime=1729887075 mode=000755 type=DIRTYPE  z
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  z/a
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  z/b
+layer=1  mtime=1729887075 mode=000644 type=REGTYPE  z/c
 -- layer 2 sha256:428b7b8eb4565e0ab87d6c8fac68ca4ae537e46b3fa12c1bf0df38dd9cdf31af
 oci-1/blobs/sha256/428b7b8eb4565e0ab87d6c8fac68ca4ae537e46b3fa12c1bf0df38dd9cdf31af: format=PAX_FORMAT
-layer=2  mtime=1729887075 mode=000755 type=DIRTYPE  run 
-layer=2  mtime=1729887075 mode=000755 type=DIRTYPE  x 
-layer=2  mtime=1729887075 mode=000000 type=REGTYPE  x/.wh.a 
+layer=2  mtime=1729887075 mode=000755 type=DIRTYPE  run
+layer=2  mtime=1729887075 mode=000755 type=DIRTYPE  x
+layer=2  mtime=1729887075 mode=000000 type=REGTYPE  x/.wh.a
 -- layer 3 sha256:d0894f8d02021691da8affbc7215accadde00386632f79f79f5a6c3c6e6c0467
 oci-1/blobs/sha256/d0894f8d02021691da8affbc7215accadde00386632f79f79f5a6c3c6e6c0467: format=PAX_FORMAT
-layer=3  mtime=1729888491 mode=000755 type=DIRTYPE  run 
-layer=3  mtime=1729888491 mode=000000 type=REGTYPE  .wh.y 
+layer=3  mtime=1729888491 mode=000755 type=DIRTYPE  run
+layer=3  mtime=1729888491 mode=000000 type=REGTYPE  .wh.y
 -- layer 4 sha256:25702a3ae7d343b80e8fc706993612b58a07c576b1ec38525abf3fa92827d6b4
 oci-1/blobs/sha256/25702a3ae7d343b80e8fc706993612b58a07c576b1ec38525abf3fa92827d6b4: format=PAX_FORMAT
-layer=4  mtime=1729888586 mode=000755 type=DIRTYPE  run 
-layer=4  mtime=1729888586 mode=000755 type=DIRTYPE  z 
-layer=4  mtime=0 mode=000755 type=REGTYPE  z/.wh..wh..opq 
+layer=4  mtime=1729888586 mode=000755 type=DIRTYPE  run
+layer=4  mtime=1729888586 mode=000755 type=DIRTYPE  z
+layer=4  mtime=0 mode=000755 type=REGTYPE  z/.wh..wh..opq
 ```
 
 (Note layer numbers are 0 based here)
 
-Okay wow first thing we see is that our layers 1,2,3 all have a `run` dir added to them, that's weird, and layer 1 has `etc` stuff and `proc` and `sys` dirs. This was actually unexpected so I'm glad we're going through this. These are mounts/dirs that podman mounts into the container by default and while we theoretically can get rid of the etc with `--dns=none --no-hosts --no-hostname`, the next thing shows that they are still there... and they are zero sized above and below. Not sure what is going on there. But notice that `run` "has" to be included in each layer because the mtime changes (though it doesn't change between 1 and 2 and it is still there!).
+Okay wow first thing we see is that our layers 1,2,3 all have a `run` dir added to them, that's weird, and layer 1 has `etc` stuff and `proc` and `sys` dirs. This was actually unexpected so I'm glad we're going through this. These are mounts/dirs that podman mounts into the container by default and while we theoretically can get rid of the etc with `--dns=none --no-hosts --no-hostname`, (UPDATE: this is because podman reuses the build cache without using args like `--dns=none` as cache busters; so I was first building without those flags for one tag (also happens with a wholly different name), then with those flags, it sees the same `FROM` and same `RUN` and hits the cache; so we can get rid of `etc` with those flags but you need to `rmi` and rebuild. I also opened a [discussion question](https://github.com/containers/podman/discussions/24382) to figure out if these are expected / if we can get rid of them) the next thing shows that they are still there... and they are zero sized above and below. Not sure what is going on there. But notice that `run` "has" to be included in each layer because the mtime changes (though it doesn't change between 1 and 2 and it is still there!).
 
 ```bash
 cd /tmp/article
@@ -119,10 +119,10 @@ echo ...
 
 ```
 oci-no-etc/blobs/sha256/d7c583b6274414e2def0073e109a86c0fb823d34a6bb017e9def5cc69a000b28: format=PAX_FORMAT
-layer=1 size=         0 mtime=1729887075 mode=000755 type=DIRTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc 
-layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/hostname 
-layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/hosts 
-layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/resolv.conf 
+layer=1 size=         0 mtime=1729887075 mode=000755 type=DIRTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc
+layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/hostname
+layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/hosts
+layer=1 size=         0 mtime=1729887075 mode=000700 type=REGTYPE uid/gid=0/0 uname/gname=/ dev=0,0 {} etc/resolv.conf
 ...
 ```
 
@@ -213,11 +213,11 @@ inspecttar.py afile.tar | sed 's_{\|, _\n  _g'  # make the output a bit less wid
 user.myxattr="value"
 
 afile.tar: format=PAX_FORMAT
-size=         0 mtime=1729896006.5087674 mode=000644 type=REGTYPE uid/gid=1000/1000 uname/gname=andrew/andrew dev=0,0 
+size=         0 mtime=1729896006.5087674 mode=000644 type=REGTYPE uid/gid=1000/1000 uname/gname=andrew/andrew dev=0,0
   'mtime': '1729896006.508767422'
   'atime': '1729896006.508767422'
   'ctime': '1729896006.508767422'
   'SCHILY.xattr.user.myxattr': 'value'
-  'SCHILY.xattr.security.selinux': 'unconfined_u:object_r:user_tmp_t:s0\x00'} afile 
+  'SCHILY.xattr.security.selinux': 'unconfined_u:object_r:user_tmp_t:s0\x00'} afile
 ```
 
