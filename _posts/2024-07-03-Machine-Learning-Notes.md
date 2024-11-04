@@ -155,7 +155,7 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
 * [Language Modeling with Gated Convolutional Networks](https://arxiv.org/abs/1612.08083)
   * gated linear unit, GLU
   * glu = mul(relu(Wx), Vx),  bilinear = mul(Wx, Vx), lstm style (gated tanh unit) gtu = mul(tanh(Wx), relu(Vx)) leads to vanishing gradients b/c you get tanh' and sigma' on both (respective) factors of chain rule
-  * they call this is a multiplicative skip connection for the gradient. todo understand the gradient calculation better since it seems they ditch the 
+  * they call this is a multiplicative skip connection for the gradient. todo understand the gradient calculation better since it seems they ditch the
   * why does google rank the "glu variants improve transformer" paper over this one
   * fig 1 diagram shows taking half the vector for W and the other half for V, like glu = mul(relu(W@left(x)), W@right(x)), reminds me of affine coupling layer (flow matching)
 * [NICE: Non-linear Independent Components Estimation](https://arxiv.org/abs/1410.8516v6)
@@ -165,4 +165,7 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * todo
 * [https://github.com/lucidrains/x-transformers](https://github.com/lucidrains/x-transformers)
 * [https://github.com/karpathy/minGPT/blob/master/mingpt/model.py](https://github.com/karpathy/minGPT/blob/master/mingpt/model.py)
-
+* [How do we build general intelligence](https://www.youtube.com/watch?v=HEp4TOrkwV4)
+  * specifically [Large Language Models Are Zero-Shot Time Series Forecasters](https://arxiv.org/abs/2310.07820)
+  * got me thinking about how you could build a composable model of dictionary + sequence model where they don't know anything about the other. The dictionary is provided zero-shot
+  * also about whether you could have a human-like dictionary that referenced a sequence of other dictionary words
