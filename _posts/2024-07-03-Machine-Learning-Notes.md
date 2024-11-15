@@ -42,6 +42,12 @@ Q: Is QK positive semidefinite? Should it be? x^TAx >= 0 means we never flip the
 Symmetry seems to be all the rage. O(d) is the Lie group (group with infinite members) of orthogonal transformations eqv (d,d) ortho matrices (inv(A) == transp(A)) eqv symmetry of a d-circle. SO(d) (special) are the rotations ie excluding the flips. In physics U and SU are unitary for complex. Equivariant wrt a symmetry G is when f(Gx) = Gf(x) ie applying any transformation in the symmetry on the input is the same as applying it on the output. Invariant is when f(Gx) = f(x). first fundamental theorem of invariant theory: f is O(d) invariant iff f(A) = f'(gram(A)) remember gram(A) is all pairwise dot products gram (n,d) -> (n,n). f is O(d) equivariant iff f(V) = sum(gi(gram(V))V) ie a weighted sum of V, where the weights are computed from the gram cucumber. E(d) is the euclidean group which preserves euclid distance, so O(d) + translations. For a point cloud, can get E(d) invariance by subtracting the mean/centroid of the points "canoniclization". Ie a way to choose a unique representative (similar to choosing the pair (u,v) st u < v or the sorted version of a set when programming.
 [vid1](https://www.youtube.com/watch?v=kpbbM0WQkZ8) [paper1](https://www.arxiv.org/abs/2407.09468)
 
+### program synthesis
+
+todo summarize dreamcoder
+
+Random idea: have a seq2seq model for programs which takes input programs of length N to a fixed length kN (like compiling to simpler/micro ops). The "compiled" program tokens now become inputs of some kind to the kN layers for the execution model which takes data tokens. It would be nice if the data representation was compatible with abstract interpreation type things like ranges instead of ints. Then program search can fix the input/output and fine tune the compiled program and then decompile to get back some program. Kinda hardware reminiscent where you have a fixed pipeline depth and the compiled program maybe interpolates between some fixed function blocks or something.
+
 ### diffusion and score-based generative models
 
 From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
