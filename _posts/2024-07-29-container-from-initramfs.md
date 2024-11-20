@@ -48,6 +48,27 @@ As you'll see below, I've split up the workaround into 2 extra files - `init2` a
 
 Update: I wrote a simple wrapper to do the parent rootfs dance and posted it [here](https://gist.github.com/aconz2/3d5bd92b4027ccef11db8215878f7112)
 
+Update2: I stumbled across a related mention of this issue on [this cloudflare blog post](https://blog.cloudflare.com/how-we-use-hashicorp-nomad/#initramfs-rootfs-and-pivot_root) which links to a [kernel patch](https://lore.kernel.org/linux-fsdevel/20200305193511.28621-1-ignat@cloudflare.com/) they submitted that added a kernel command line arg that would, in kernel, do:
+
+```c
+ksys_mkdir("/root", 0700);
+do_mount("tmpfs", "/root", "tmpfs", 0, NULL);
+ksys_chdir("/root");
+do_mount(".", "/", NULL, MS_MOVE, NULL);
+ksys_chroot(".");
+# then initramfs is unpacked in this /root tmpfs
+```
+
+From the thread, it looks like it wasn't deemed a good patch and was never merged in any form from what I can tell. The first reply proposes
+
+```c
+mount("/", "/", NULL, MS_BIND | MS_REC, NULL);
+chdir("/..");
+chroot(".");
+```
+
+which seems to work in my initial testing; still digging further.
+
 ## setup
 
 Download `cloud-hypervisor`, `busybox`, and `crun`. Yay static exes
@@ -202,6 +223,8 @@ crun run --bundle /run/bundle containerid-1234
 
 ### qemumyinitdebug.sh
 
+(update: cloudhypervisor also supports debug so that would probably have been easier)
+
 We can also run under qemu. I'm not sure how much of this is correct b/c qemu confuses me. But it does let us debug the kernel in conjunction with the next script.
 
 I'm using the microvm here because it behaves better with the qemu process exiting after the vm shuts down. With the default machine type, I got `-device pvpanic-pci` to work, but then something else wasn't working. I was also testing it for the speed of boot compared to cloud hypervisor. The `-S` pauses execution so that we can insert our breakpoints.
@@ -241,7 +264,7 @@ bash makeinitramfs.sh && bash cloudhypervisormyinit.sh
 
 kernel messages omitted (and some extra newlines inserted)
 
-The `/proc/self/mountinfo` subset quoted from [docs](https://www.kernel.org/doc/html/latest/filesystems/proc.html?highlight=mountinfo#proc-pid-mountinfo-information-about-mounts) displayed is: 
+The `/proc/self/mountinfo` subset quoted from [docs](https://www.kernel.org/doc/html/latest/filesystems/proc.html?highlight=mountinfo#proc-pid-mountinfo-information-about-mounts) displayed is:
 
 1. mount ID:  unique identifier of the mount (may be reused after umount)
 2. parent ID:  ID of parent (or of self for the top of the mount tree)
@@ -254,45 +277,45 @@ I've labeled each snapshot of mountinfo on the right
 
 ```
 ---------------------mountinfo init1 before ----------------------------- (1)
- 1  1    0:2   / /                         rootfs    
-19  1   0:18   / /proc                     proc      
-20  1   0:19   / /sys/fs/cgroup            cgroup2   
-21  1    0:5   / /dev                      devtmpfs  
-22  1  254:0   / /run/bundle/rootfs        squashfs  
+ 1  1    0:2   / /                         rootfs
+19  1   0:18   / /proc                     proc
+20  1   0:19   / /sys/fs/cgroup            cgroup2
+21  1    0:5   / /dev                      devtmpfs
+22  1  254:0   / /run/bundle/rootfs        squashfs
 -------------------------------------------------------------------------
 
 ---------------------mount --rbind / /abc ------------------------------- (2)
-23 23    0:2   / /                         rootfs    
-24 23   0:18   / /proc                     proc      
-25 23   0:19   / /sys/fs/cgroup            cgroup2   
-26 23    0:5   / /dev                      devtmpfs  
-27 23  254:0   / /run/bundle/rootfs        squashfs  
-28 23    0:2   / /abc                      rootfs    
-29 28   0:18   / /abc/proc                 proc      
-30 28   0:19   / /abc/sys/fs/cgroup        cgroup2   
-31 28    0:5   / /abc/dev                  devtmpfs  
-32 28  254:0   / /abc/run/bundle/rootfs    squashfs  
+23 23    0:2   / /                         rootfs
+24 23   0:18   / /proc                     proc
+25 23   0:19   / /sys/fs/cgroup            cgroup2
+26 23    0:5   / /dev                      devtmpfs
+27 23  254:0   / /run/bundle/rootfs        squashfs
+28 23    0:2   / /abc                      rootfs
+29 28   0:18   / /abc/proc                 proc
+30 28   0:19   / /abc/sys/fs/cgroup        cgroup2
+31 28    0:5   / /abc/dev                  devtmpfs
+32 28  254:0   / /abc/run/bundle/rootfs    squashfs
 -------------------------------------------------------------------------
 
 ----------------cd /abc && mount --move . / ----------------------------- (3)
-23 23    0:2   / /                         rootfs    
-24 23   0:18   / /proc                     proc      
-25 23   0:19   / /sys/fs/cgroup            cgroup2   
-26 23    0:5   / /dev                      devtmpfs  
-27 23  254:0   / /run/bundle/rootfs        squashfs  
-28 23    0:2   / /                         rootfs    
-29 28   0:18   / /proc                     proc      
-30 28   0:19   / /sys/fs/cgroup            cgroup2   
-31 28    0:5   / /dev                      devtmpfs  
-32 28  254:0   / /run/bundle/rootfs        squashfs  
+23 23    0:2   / /                         rootfs
+24 23   0:18   / /proc                     proc
+25 23   0:19   / /sys/fs/cgroup            cgroup2
+26 23    0:5   / /dev                      devtmpfs
+27 23  254:0   / /run/bundle/rootfs        squashfs
+28 23    0:2   / /                         rootfs
+29 28   0:18   / /proc                     proc
+30 28   0:19   / /sys/fs/cgroup            cgroup2
+31 28    0:5   / /dev                      devtmpfs
+32 28  254:0   / /run/bundle/rootfs        squashfs
 -------------------------------------------------------------------------
 
 ---------------------chroot . (/abc) ------------------------------------ (4)
-28 23    0:2   / /                         rootfs    
-29 28   0:18   / /proc                     proc      
-30 28   0:19   / /sys/fs/cgroup            cgroup2   
-31 28    0:5   / /dev                      devtmpfs  
-32 28  254:0   / /run/bundle/rootfs        squashfs  
+28 23    0:2   / /                         rootfs
+29 28   0:18   / /proc                     proc
+30 28   0:19   / /sys/fs/cgroup            cgroup2
+31 28    0:5   / /dev                      devtmpfs
+32 28  254:0   / /run/bundle/rootfs        squashfs
 -------------------------------------------------------------------------
 
 [    0.058861] crun[669]: memfd_create() called without MFD_EXEC or MFD_NOEXEC_SEAL set
@@ -302,11 +325,11 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ---------------------mountinfo init1 after --------------------------- (5)
- 1  1    0:2   / /                         rootfs    
-19  1   0:18   / /proc                     proc      
-20  1   0:19   / /sys/fs/cgroup            cgroup2   
-21  1    0:5   / /dev                      devtmpfs  
-22  1  254:0   / /run/bundle/rootfs        squashfs  
+ 1  1    0:2   / /                         rootfs
+19  1   0:18   / /proc                     proc
+20  1   0:19   / /sys/fs/cgroup            cgroup2
+21  1    0:5   / /dev                      devtmpfs
+22  1  254:0   / /run/bundle/rootfs        squashfs
 ----------------------------------------------------------------------
 ```
 
@@ -337,7 +360,7 @@ I wanted to see the state of `/proc/self/mountinfo` when `crun` is doing its `pi
 @@ -1021,6 +1021,9 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
         dumpio(tcp);
         line_ended();
- 
+
 +    system("busybox awk -e '{printf(\"%2d %2d %6s %3s %-25s %-10s\\n\", $1, $2, $3, $4, $5, $8);}' /proc/self/mountinfo 1>&2 && busybox sha256sum /proc/self/mountinfo 1>&2");
 +    tprints_string("-------------------------------------------------------------------\n");
 +
@@ -430,23 +453,23 @@ strace: Process 673 attached
 This is from running `sh -c 'cat /proc/self/mountinfo'` inside our container (by changing the config.json args). Note the ids are different because the container is in another mount namespace.
 
 ```
-44 33  254:0 /               /                         squashfs  
-45 44   0:21 /               /proc                     proc      
-46 44   0:22 /               /dev                      tmpfs     
-47 46   0:23 /               /dev/pts                  devpts    
-48 46   0:24 /               /dev/shm                  tmpfs     
-49 46   0:20 /               /dev/mqueue               mqueue    
-50 44   0:25 /               /sys                      sysfs     
-51 50   0:19 /               /sys/fs/cgroup            cgroup2   
-52 45   0:26 /               /proc/acpi                tmpfs     
-53 45    0:5 /null           /proc/kcore               devtmpfs  
-54 45    0:5 /null           /proc/keys                devtmpfs  
-55 45    0:5 /null           /proc/timer_list          devtmpfs  
-56 50   0:27 /               /sys/firmware             tmpfs     
-57 45   0:21 /bus            /proc/bus                 proc      
-58 45   0:21 /fs             /proc/fs                  proc      
-59 45   0:21 /irq            /proc/irq                 proc      
-60 45   0:21 /sys            /proc/sys                 proc      
-61 45   0:21 /sysrq-trigger  /proc/sysrq-trigger       proc      
-38 46   0:23 /0              /dev/console              devpts    
+44 33  254:0 /               /                         squashfs
+45 44   0:21 /               /proc                     proc
+46 44   0:22 /               /dev                      tmpfs
+47 46   0:23 /               /dev/pts                  devpts
+48 46   0:24 /               /dev/shm                  tmpfs
+49 46   0:20 /               /dev/mqueue               mqueue
+50 44   0:25 /               /sys                      sysfs
+51 50   0:19 /               /sys/fs/cgroup            cgroup2
+52 45   0:26 /               /proc/acpi                tmpfs
+53 45    0:5 /null           /proc/kcore               devtmpfs
+54 45    0:5 /null           /proc/keys                devtmpfs
+55 45    0:5 /null           /proc/timer_list          devtmpfs
+56 50   0:27 /               /sys/firmware             tmpfs
+57 45   0:21 /bus            /proc/bus                 proc
+58 45   0:21 /fs             /proc/fs                  proc
+59 45   0:21 /irq            /proc/irq                 proc
+60 45   0:21 /sys            /proc/sys                 proc
+61 45   0:21 /sysrq-trigger  /proc/sysrq-trigger       proc
+38 46   0:23 /0              /dev/console              devpts
 ```
