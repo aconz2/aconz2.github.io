@@ -9,11 +9,11 @@ I just tracked down something that has been plaguing me for as long as I can rem
 
 The slightly longer version is:
 
-In one terminal, `echo $$` (let's say 42) and then begin a command `dnf in` and don't hit enter.
+In one terminal, `echo $$` (let's say 42) and then begin a command `dnf in` and don't hit tab.
 
 In another terminal `strace -f -T -tt -p 42 |& tee /tmp/slowbash.out`
 
-In there, we see a long `ppoll` call
+In there, we see a long `ppoll` call (3.86 seconds all the way on the right)
 
 ```
 [pid 706601] 14:09:31.149781 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3 <0.000021>
@@ -141,3 +141,52 @@ libcurl/8.6.0 OpenSSL/3.2.2 zlib/1.3.1.zlib-ng brotli/1.1.0 libidn2/2.3.7 libpsl
 LDAP tries to resolve the hostname, which in a toolbox container is `toolbx` (not a typo!) and so (at least for me), `resolvectl query toolbx` takes 3.5 seconds and doesn't resolve. I've had this issue previously because I had always set my hostname to something other than localhost that never resolved either, so I suspect it is the same issue. Though I just checked my laptop which has hostname `andrew-laptop` and does resolve I think because of DHCP, maybe because it is on wifi? Tab complete is still not rapid so maybe I'll look at that later.
 
 One solution is to setup the hostname to resolve correctly, but on the other hand, why do we have to resolve our hostname just to get command completions...
+
+Update: okay looking at this a bit further I realize I don't even know what a hostname is.
+
+```
+→ hostnamectl --json=pretty | jq '{Hostname, StaticHostname, PrettyHostname, DefaultHostname, HostnameSource}'
+{
+  "Hostname": "fedora",
+  "StaticHostname": "localhost",
+  "PrettyHostname": null,
+  "DefaultHostname": "fedora",
+  "HostnameSource": "static"
+}
+→ toolbox run hostnamectl --json=pretty | jq '{Hostname, StaticHostname, PrettyHostname, DefaultHostname, HostnameSource}'
+{
+  "Hostname": "fedora",
+  "StaticHostname": "localhost",
+  "PrettyHostname": null,
+  "DefaultHostname": "fedora",
+  "HostnameSource": "static"
+}
+→ hostname
+localhost
+→ toolbox run hostname
+toolbx
+# looking at my router, linux is the name that it has gotten for this machine from who knows where
+→ resolvectl query linux.attlocal.net
+linux.attlocal.net: 192.168.1.76               -- link: br0
+
+-- Information acquired via protocol DNS in 1.7ms.
+#######
+# on my laptop
+#######
+→ hostnamectl --json=pretty | jq '{Hostname, StaticHostname, PrettyHostname, DefaultHostname, HostnameSource}'
+{
+  "Hostname": "andrew-laptop",
+  "StaticHostname": "andrew-laptop",
+  "PrettyHostname": null,
+  "DefaultHostname": "fedora",
+  "HostnameSource": "static"
+}
+→ hostname
+andrew-laptop
+→ resolvectl query andrew-laptop.attlocal.net
+andrew-laptop.attlocal.net: 192.168.1.132      -- link: br0
+
+-- Information acquired via protocol DNS in 1.8ms.
+```
+
+Also learned that `hostname(1)` is the same as `uname -n` which calls `uname(2)` and returns in the struct field named `nodename`. There are so many names and I don't get it.
