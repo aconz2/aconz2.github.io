@@ -79,9 +79,9 @@ note to self using grad everywhere but remember grad(f : n -> 1) : (1,n) vector 
   * extend by doing this for multiple noise levels to get one s for each noise level
   * extend by doing noise conditional score model where the score model gets the noise level as an input s(x, std) (related to DDPM todo)
 * control the generation process
-  * to condition on some input (like a prompt/caption), we want to train a p(x | y). expand with bayes rule and compute the score function and we get score(p(x | y)) = score(p(x)) + score(p(y | x))
-  * p(y | x) is just a model that takes an image and gives a caption (or whatever we are conditioning on). Can use any model we want in conjunction with our score(p(x))
-  * though really we need a p(y | x, t) a time dependent classifier (can train a classifier on noised images)
+  * to condition on some input (like a prompt/caption), we want to train a `p(x | y)`. expand with bayes rule and compute the score function and we get `score(p(x | y)) = score(p(x)) + score(p(y | x))`
+  * `p(y | x)` is just a model that takes an image and gives a caption (or whatever we are conditioning on). Can use any model we want in conjunction with our score(p(x))
+  * though really we need a `p(y | x, t)` a time dependent classifier (can train a classifier on noised images)
 * probability evaluation
   * train a model to estimate based on varying noise level t [0, T] score(pt(x)) where p0(x) are our data points, pT(x) is a fully noised version and is eqv to eg a gaussian and pt(x) is somewhere in between.
   * sde stochastic differential equation dx = f(x, t)dt + g(t)dw where g(t)dw is the stochastic part
