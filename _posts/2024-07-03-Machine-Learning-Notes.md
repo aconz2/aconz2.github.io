@@ -72,6 +72,7 @@ note to self using grad everywhere but remember grad(f : n -> 1) : (1,n) vector 
   * replace fisher divergence with score matching because it requires knowing the true score function. but score matching requires trace of jacobian, so 1 backpass per dimension of the input
   * sliced score matching (from sliced fisher div) projects the score (vector field) to random directions. end up with vT grad f(x) v = vT grad vT f(x). ie we dot with a direction vector v on the output of the nnet so we get a scalar output and then again after the backward pass to get a scalar result (on both sides). so then we only need one backprop per sample+direction
   * denoising score matching, derive a noisy distribution q from p by adding gaussian noise and then try to find the score of this dist
+  * understand the losses a bit better now, for a while it made no sense you could evaluate the loss without knowing the true score at that data point; one high level note is that at a data point, the grad should be zero b/c the prob is at a local maximum; for a noisy point, we want the grad to point towards the data point, so the grad should be -noise at x + noise
 * sampling, assume we've learned a good score function s
   * if we directly follow s by integrating random points, we'll get clusters boo. so we use langevin dynamics to add noise at each step during integration
   * on its own, this gives bad samples b/c our learned score function is very innacurate in low data-density regions (remember real images are very sparse in the space of all images)
@@ -181,3 +182,4 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * specifically [Large Language Models Are Zero-Shot Time Series Forecasters](https://arxiv.org/abs/2310.07820)
   * got me thinking about how you could build a composable model of dictionary + sequence model where they don't know anything about the other. The dictionary is provided zero-shot
   * also about whether you could have a human-like dictionary that referenced a sequence of other dictionary words
+* [Diffusion Models: A Comprehensive Survey of Methods and Applications](https://arxiv.org/abs/2209.00796)
