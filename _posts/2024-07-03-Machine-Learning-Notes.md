@@ -87,6 +87,10 @@ c... ; ... x y =[op]=> ... z # where z = x op y
 
 ie a binary op on x y doesn't care about the constants or the other things on the stack and only has to copy them over. We could of course generate huge number of augmented training examples to learn this, but maybe we could bake it in too.
 
+Another approach to the abstractness conditioning parameter thing from above would be to instead augment the examples with a postfix of "shape" and "type"; ie we search for a sequence of ops O s.t `x O == y && x O type == t && x O shape == s` where we substitute t and s appropriately (assuming we know the desired output type and shape). I think these could anchor the search better because we increase the number of known targets (though they are redundant in a sense, ideally could get more uncorrelated anchors).
+
+Another random thought is that when we are searching over programs as a sequence of ops, they won't exactly match our dictionary of ops and so we really get a distribution over ops. We can of course sample the top k or just randomly sample from here and that is fine, but it would be nice to give a more grounded evaluation of this fuzzy program. One possible way to do this is to compute an expectation on the true computed outputs for sampled programs. Ie `p_i * encode(eval(P_i))` where `p_i` is the probability for the sampled program `P_i`. This uses the true computed value of `P_i`, encodes it to a vector, and (weighted) averages it with the other samples. Though I suppose if we're encoding with a multi-vector approach, not sure what the right way to average these is. When the fuzzy program is exactly (one of) the true program(s), then this expectation will match our target value.
+
 ### diffusion and score-based generative models
 
 From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
