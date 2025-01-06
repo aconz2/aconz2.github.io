@@ -95,6 +95,10 @@ The above is about giving a concrete value to a fuzzy program by taking the expe
 
 One more piece that might be really useful here is a (okay I think this one is actually more like a metric tensor) a bilinear model which takes two embedded values and tells us how close one is to the other. Maybe it is multidimensional output where the 0 vector means identical.  And we hope to learn this model such that it we can use it to give feedback on partial solutions that tell us if we're on the right track. The evaluation model tells us how to move from input to output. The measurement models tells us how "similar" a certain output is from a target. The prior going in is that "similar" would ideally capture many notions of similar like hamming distance, exact match but shifted by N digits/cells, partial match but rotated 90deg, etc. We do this in vector space because the discrete similarity measures are too discontinuous and we'd have to pick particular ones, better if we could be lazy and learn them. Now how to train this?
 
+From looking at arc examples is that when presented with the input/output pairs `i -> o`, it is useful to actually first find some data and program that goes from `j -> i` (and possibly the inverse `i -> j`), then do a search on `j -> o`. A silly example might be if finding `sqrt cube` and given `25 -> 125`, `9 -> 27`, then the model first notices `5 -squared-> 25` and `3 -squared-> 9`, then `5 -> 125` and `3 -> 27` is a bit more "obvious".
+
+Another tactic that might fit somewhere here is properties. If we learn a set of functions with boolean or integer outputs, then it might condition the search to know that eg the input examples are rotationally symmetric (arc again) or something like that. Not sure how these fit because I don't think they're actually going to be on the solution path.
+
 ### diffusion and score-based generative models
 
 From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
