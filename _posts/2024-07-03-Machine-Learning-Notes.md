@@ -230,3 +230,28 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * got me thinking about how you could build a composable model of dictionary + sequence model where they don't know anything about the other. The dictionary is provided zero-shot
   * also about whether you could have a human-like dictionary that referenced a sequence of other dictionary words
 * [Diffusion Models: A Comprehensive Survey of Methods and Applications](https://arxiv.org/abs/2209.00796)
+* [GLU Variants Improve Transformer](https://arxiv.org/pdf/2002.05202v1)
+  * GELU (gaussian error linear unit) is the gaussian activation function, looks like ReLU with a little smooth elbow near the origin
+  * GLU (gated linear unit): "component-wise product of two linear transformations of the input, one of which is sigmoid-activated"
+    * glu = mul(activation(Wx), Vx)
+    * compare to mlp = relu(Wx)V
+* [Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation](https://arxiv.org/abs/2108.12409)
+  * ALiBi (Attention with Linear Biases) is a type of positional encoding
+  * instead of adding positional information to the tokens, bias the attention matrix (result of QK; what weights the V) with a function of i,j
+  * easy to implement and easy to extend for longer sequences than you train on
+  * lower diag matrix M(i, j) = j - i
+  * each head may use a different scalar of this matrix (to modulate how much the head "cares about locality")
+    * they don't learn this, but is static, and given by (exp is base 2) exp(-(arange(8) + 1)) (ie 1/2, 1/4, 1/8) for 8 heads
+    * for other heads they scale between them like exp(-((arange(nhead) + 1) / (nhead/8))) (ie powers go like 0.5, 1, 1.5 ... for n=16)
+  * I like adding a static slope per head because it breaks the symmetry of heads in an imposed way
+* [ModernBERT](https://arxiv.org/pdf/2412.13663)
+  * no bias except in final decoder, pre-norm (for tokens) and layer norm (for weights), rope embedding, geglu instead of mlp
+  * alternating attention: every third layer does global attention, rest do local attention (each token attends to +-64 tokens)
+    * local attention supported directly by flash attention `window_size`
+  * unpadding: instead of having each separate sequence be an element of the batch which requires padding to the length of the longest in the batch, concat into one single sequence and use attention masking to keep sequences separate
+    * supported directly by flash attention (`flash_attn_varlen`) by passing `cu_seqlens` cumulative sequence lengths
+      * ie for seqs of length 2, 3, 4, `cu_seqlens` is 0, 2, 5, 9
+    * because there is still a max sequence length limit of the concat'd inputs, use sequence packing to arrange the inputs into low-total-length-variance mini batches
+  * as in original BERT, when using as a fixed length embedding (for indexing/retreival), just takes the first token
+    * can also use multiple tokens for multi vector retreival
+  * they say they use varlen attention & rope from flash attention, but I don't think there is varlen with rotary in fa. there is with alibi which is cool
