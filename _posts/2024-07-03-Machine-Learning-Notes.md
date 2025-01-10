@@ -101,6 +101,49 @@ Another tactic that might fit somewhere here is properties. If we learn a set of
 
 In thinking about how to train the model, it would be nice to do it in more of a reinforcement cycle style than as a bulk synthetic dataset way. For the latter you would either randomly generate or somehow compile a list of programs (initial stack states and list of ops), then you can train on every intermediate state of all of those executions. For the former, you would almost start empty and have some process that produces programs (single or multiple ops) that it "wants" to learn on because it is somehow "interested" in or has bad loss or underexplored. And additionally at test time, I would hope this process would continue as we can't really expect the model to be pretrained on every computable state, so we should expect to finetune by expanding or improving the model on the relevant computational states it needs to pathfind in. That could be actual finetuning where we are updating the base model weights with more concrete evaluations about the things it has requested or something else ... . For how to have the model ask for things it wants computed, I'm not sure. It goes back to the above about whether we can take an embedded value and decode concrete values that we can then compute on. If we can, then one way is (our setup is that we are optimizing a sequence of embedded states and ops where state0 is the input and stateN is the output and our loss is something like `sum_norms(state_i - op_i(state_{i-1}))`) to sample concrete states at `state_i` and compute sampled ops from `op_i` and update the model with this information (the expectation of these values).
 
+Now I think a stack model is bad and better to do a register machine. Mainly got there by thinking about all the dup/over stuff you need for most things, and that having the model learn dup is such a waste; maybe you could add a stack manipulator as a condition to each op so that in effect you learn fused `dup +` instead of `dup` then `+`, but still you're going to duplicate things and if eg your arc board is the base of the stack, then duping it anywhere (if you can't fuse it in one step) is going to blow up your sequence length. So anyways on with thinking about a register machine.
+
+For a register machine, your machine state is R registers where each register holds a fixed number N tokens. Values get encoded to the fixed number of tokens through some encoder. We learn some operator network which operates on (simplify with just binary for now) 2 registers. To apply our operator network to a machine state, it uses two attention vectors (of size R) to take a weighted sum of the registers so we end up with `(2, N)` tokens and O operation tokens (from an embedding matrix) and should compute N output tokens that correspond to the encoding of the concrete result of applying that operation. We can compute a program output from an initial machine state and a program of length P where we have `(P, 2, R)` attention "register-selectors" and `(P)` operations (if we're optimizing, I guess `(P, O)` for O operators and we softmax each row and these are "op-selectors") by iterating over each op in the program and concat'ing the results of the network together. The register-selectors have to be masked to be causal so that you can only use a register as input that has already been computed. This is a bit lame b/c we have to do P passes through the network to compute the final output state, so one modification would be to have stages of some width W (could be variable) and then we get parallelism within the stage (trading breadth for depth), example:
+
+```
+# serial
+a = ...  # some input and/or maybe some constant
+b = ...
+c = select(ops)(select([a, b]), select([a, b]))
+d = select(ops)(select([a, b, c]), select([a, b, c]))
+e = select(ops)(select([a, b, c, d]), select([a, b, c, d]))
+output = e
+
+# stages of width 2
+a = ...
+b = ...
+c = select(ops)(select([a, b]), select([a, b]))
+d = select(ops)(select([a, b]), select([a, b]))
+e = select(ops)(select([a, b, c, d]), select([a, b, c, d]))
+f = select(ops)(select([a, b, c, d]), select([a, b, c, d]))
+# and maybe one stage of width 4
+g = select(ops)(select([a, b, c, d, e, f]), select([a, b, c, d, e, f]))
+h = select(ops)(select([a, b, c, d, e, f]), select([a, b, c, d, e, f]))
+i = select(ops)(select([a, b, c, d, e, f]), select([a, b, c, d, e, f]))
+j = select(ops)(select([a, b, c, d, e, f]), select([a, b, c, d, e, f]))
+output = j
+```
+
+again, we hold the program P fixed between input/output in the task and we optimize for the loss between the final program output (last register of N tokens) to match the encoder's output of the example outputs. We maybe also want to minimize the L1 of the op-selectors so that in the end they are just picking a single operation. Kinda reminds me of [Deep Differentiable Logic Gate Networks](https://arxiv.org/abs/2210.08277). In eg arc-dsl, there are higher order functions where not every application is of the form `op(reg, reg)` but also `op(op, op)`, `op(op, reg)`, `op(op, op, reg)`, how could we support that? compose is probably the least important one since that can already be expressed as two sequential operations (though if you want continual learning ideally you could learn these sequences as reusable functions and update your list of ops). Same for fork. Idk yet. Another one is indexing; if you're dealing with boards then you'll need ternary ops for `a[i:j]`.
+
+To support multi-arity, I guess I see two directions, one is what I say above about having a fixed register 0 with an `empty` value and an operation can always pick it, but then you'd want to enforce that the empty value is at the end like `f(a, b, empty)` and not `f(a, empty, b)` which seems tricky. And you would have every op have k register-selectors for the max arity k. Another would be to go more like a fixed function piece of hardware and say that at every stage, there are for example 4 1-ops, 4 2-ops, 2 3-ops, and 1 4-op and if you need more 4-ops for example, you just need more stages and fill the unused ops with nops. This raises a question on whether you would then share the same operator network between all the arities either with padding tokens or attention masks, or have separate network per arity. This looks like
+
+```
+a = 10
+b = 20
+c = select(ops1)(select([a, b]))
+d = select(ops1)(select([a, b]))
+e = select(ops2)(select([a, b]), select([a, b]))
+f = select(ops2)(select([a, b]), select([a, b]))
+g = select(ops3)(select([a, b]), select([a, b]), select([a, b]))
+...
+```
+
 ### diffusion and score-based generative models
 
 From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
