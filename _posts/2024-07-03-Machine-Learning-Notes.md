@@ -223,6 +223,7 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * x + f0(x) + f1(x + f0(x)) + ...
 * [A Mathematical Framework for Transformer Circuits](https://transformer-circuits.pub/2021/framework/index.html)
   * residual stream, QK/OV circuit
+  * multi head attention can either be seen as the O times the concat of attention on a chunk of channels, or as a sum of heads each with their slice of O to upscale back to C [link](https://transformer-circuits.pub/2021/framework/index.html#architecture-attn-independent)
 * [Understanding and Improving Transformer From a Multi-Particle Dynamic System Point of View](https://arxiv.org/abs/1906.02762)
   * numerical integrator, Lie-Trotter splitting scheme and the Euler's method, Strang-Marchuk splitting scheme
   * attention is like diffusion (interaction) and FF like convection (indepenent particle flow)
@@ -298,3 +299,50 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * as in original BERT, when using as a fixed length embedding (for indexing/retreival), just takes the first token
     * can also use multiple tokens for multi vector retreival
   * they say they use varlen attention & rope from flash attention, but I don't think there is varlen with rotary in fa. there is with alibi which is cool
+* [Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer](https://arxiv.org/abs/1701.06538)
+  * want more parameters, but without blowing up compute; so a single evaluation should use some subset of the total parameters
+  * softplus is a smoothed relu (always positive unlike gelu)
+  * similar to a glu, mul(gate(x), expert(x))
+    * in simplest form, gate is softmax(WG x)
+    * next is softmax(topk(WG x))  though I was thinking it was topk(softmax(WG x)) though I guess that doesn't sum to 1
+    * finally add some noise gated by a learnable noise matrix softmax(topk((WG x) + mul(noise, WN x)))
+      * helps with load balancing... didn't read too much
+  * by using topk, the experts with 0 weight don't need to be computed at all
+  * within a batch, not very efficient if you spread each input to unique experts because then your expert only has batchsize 1
+    * so do some aggregation
+    * but don't exceed an expert's batch size either
+  * the expert could be any network, but they study FFN
+* [Linformer: Self-Attention with Linear Complexity](https://arxiv.org/abs/2006.04768)
+  * [Johnson–Lindenstrauss (JL) lemma](https://en.wikipedia.org/wiki/Johnson%E2%80%93Lindenstrauss_lemma): "a set of points in a high-dimensional space can be embedded into a space of much lower dimension in such a way that distances between the points are nearly preserved"
+  * they use JL to say that instead of computing full attention matrix (QK^T) of (T,T), we can project our sequence from (T,C) to (k,C) keys (NOTE this is reducing the number of tokens and mixing their channels) and likewise (k,C) values and do cross attention (note I think of anything that isn't attention(X) = softmax(QX @@ KX) @ VX as cross attention but maybe that isn't totally accurate (sidenote I kinda like @@ as being outer)). between our original sequence and the down projected shorter sequence
+    * lowers attention matrix from (T,T) to (T,k)
+  * linformer(X) = softmax(QX @@ EKX) @ FVX
+    * E = dR, F = exp(-d)R for small contant d and are fixed; R is Normal(0, 1/k); shape is (k, C)
+    * these random projection matrices are (or in expectation?) satisfy JL
+  * they observe best performance when sharing E = F across all heads and layers??
+* [TokenFormer: Rethinking Transformer Scaling with Tokenized Model Parameters](https://arxiv.org/pdf/2410.23168)
+  * wouldn't it be nice to be able to add parameters without retraining (continual learning)
+  * "pattention": do "cross attention" between input tokens and static keys and values
+  * then use pattention in self-attention to compute QKV instead of simple (C,C) matrices
+    * and the output, and as the feed forward layer??
+    * that is the tokenformer
+  * from [yannic](https://www.youtube.com/watch?v=gfU5y7qCxF0) and [gabriel](https://www.youtube.com/watch?v=4lGgbkD6Z0I) videos, they point out that pattention is really just an MLP variant (and discussion in the comments, particularly the second video)
+    * this is actually super interesting to me, basically they fit this formula like f(q(x) @@ k(x)) @ v(x) where f is a nonlinearity (usually either scalar-wise like relu or row-wise like softmax)
+      * remember: the number of output tokens comes from the rows of the queries, either X or QX; the number of keys and values have to match each other, but can be different than T (and is one of the things I think of as cross attention). This gives you a rectangular attention matrix that takes the weighted row-wise-sum of the rectangular value matrix. The values can be of different dimension to the input but are scaled back up/down
+      * mlp: k and v are constant (discard x) and f is relu or silu or gelu but could be softmax and then you get attention
+        * relu(X @@ K) @ V
+        * relu((T,C) (C, 4C)) (4C, C) -> (T, C)
+        * one difference to note is that k and v in MLP are typically an up-down-projection into C -> 4C -> C while mha is a down projection C -> H -> C
+      * so an equivalent way to think about an mlp is like doing attention between your T input tokens with 4T keys and 4T values that are just learnable params and use relu instead of softmax or whatever
+      * attention: softmax(QX @@ KX) @ VX
+      * pattention: softmax(X @@ K) @@ V
+      * so then it seems like we can ceate a hybrid where we do cross attention between X and concat(X, K) keys and concat(X, V) values where K and V are fixed and we always leave then unmasked
+        * brings up some questions about balancing whether we are collecting information from the self attention portion or the pattention/"mlp" portion (esp the first row of a causal where we might have 1 self attention qk and 128 say qk mlp)
+        * also about dimension matching: an mlp in attention mindset is like cross attention between a sequence of T and one of 4T at full dimension C; a multihead attention as is common is between T and T at dimension C/8 for 8 heads.
+        * this leads to an uberformula for a hybrid like: `f(q(x) @@ concat(k(x), k'(x), K', K'')) @ concat(v(x), V', v'(x), V'') @ O`
+          * q(x) can optionally be identity and optionally change dimension
+          * you then are doing cross attention with a sequence of four parts where each part has an interaction between the keys/values that is dynamic/dynamic, dynamic/static, static/dynamic, static/static
+          * mlp is static/static, normal attention is dynamic/dynamic, moe is static/dynamic, not sure if dynamic/static is already out there; linformer is dynamic/dynamic on a shortened sequence
+          * each of these parts can be varied in size from 0 (omit) up to whatever
+          * O is an output rescaling to get us back to dimension C
+          * is this useful or known? todo write maybe a separate blog post about this, it seems like a cool way to blend attention+ff into one layer with adjustable ratio
