@@ -103,9 +103,10 @@ In thinking about how to train the model, it would be nice to do it in more of a
 
 Now I think a stack model is bad and better to do a register machine. Mainly got there by thinking about all the dup/over stuff you need for most things, and that having the model learn dup is such a waste; maybe you could add a stack manipulator as a condition to each op so that in effect you learn fused `dup +` instead of `dup` then `+`, but still you're going to duplicate things and if eg your arc board is the base of the stack, then duping it anywhere (if you can't fuse it in one step) is going to blow up your sequence length. So anyways on with thinking about a register machine.
 
-For a register machine, your machine state is R registers where each register holds a fixed number N tokens. Values get encoded to the fixed number of tokens through some encoder. We learn some operator network which operates on (simplify with just binary for now) 2 registers. To apply our operator network to a machine state, it uses two attention vectors (of size R) to take a weighted sum of the registers so we end up with `(2, N)` tokens and O operation tokens (from an embedding matrix) and should compute N output tokens that correspond to the encoding of the concrete result of applying that operation. We can compute a program output from an initial machine state and a program of length P where we have `(P, 2, R)` attention "register-selectors" and `(P)` operations (if we're optimizing, I guess `(P, O)` for O operators and we softmax each row and these are "op-selectors") by iterating over each op in the program and concat'ing the results of the network together. The register-selectors have to be masked to be causal so that you can only use a register as input that has already been computed. This is a bit lame b/c we have to do P passes through the network to compute the final output state, so one modification would be to have stages of some width W (could be variable) and then we get parallelism within the stage (trading breadth for depth), example:
+For a register machine, your machine state is R registers where each register holds a fixed number N tokens with dim C; so (N,C). Values of variable length get encoded to N tokens through some encoder. We learn some operator network which operates on (simplify with just binary for now) 2 registers. To apply our operator network to a machine state, it uses two attention vectors (of size R) to take a weighted sum of the registers so we end up with an input of `(2, N, C)` and O operation tokens (from an embedding matrix) and should compute N output tokens that correspond to the encoding of the concrete result of applying that operation. The input is probably the tokens concatted so (2N + O, C). We can compute a program output from an initial machine state and a program of length P where we have `(P, 2, R)` attention "register-selectors" and `(P)` operations (if we're optimizing, I guess `(P, O)` for O operators and we softmax each row and these are "op-selectors") by iterating over each op in the program and concat'ing the results of the network together. The register-selectors have to be masked to be causal so that you can only use a register as input that has already been computed. This is a bit lame b/c we have to do P passes through the network to compute the final output state, so one modification would be to have stages of some width W (could be variable) and then we get parallelism within the stage (trading breadth for depth), example:
 
 ```
+# each select has an implicit selection vector of appropriate size (op vs reg) and mask that gets softmax'd
 # serial
 a = ...  # some input and/or maybe some constant
 b = ...
@@ -134,8 +135,9 @@ again, we hold the program P fixed between input/output in the task and we optim
 To support multi-arity, I guess I see two directions, one is what I say above about having a fixed register 0 with an `empty` value and an operation can always pick it, but then you'd want to enforce that the empty value is at the end like `f(a, b, empty)` and not `f(a, empty, b)` which seems tricky. And you would have every op have k register-selectors for the max arity k. Another would be to go more like a fixed function piece of hardware and say that at every stage, there are for example 4 1-ops, 4 2-ops, 2 3-ops, and 1 4-op and if you need more 4-ops for example, you just need more stages and fill the unused ops with nops. This raises a question on whether you would then share the same operator network between all the arities either with padding tokens or attention masks, or have separate network per arity. This looks like
 
 ```
-a = 10
-b = 20
+# 2 1-ops, 2 2-ops, 1 3-op all in one stage (only a,b available)
+a = ...
+b = ...
 c = select(ops1)(select([a, b]))
 d = select(ops1)(select([a, b]))
 e = select(ops2)(select([a, b]), select([a, b]))
@@ -143,6 +145,8 @@ f = select(ops2)(select([a, b]), select([a, b]))
 g = select(ops3)(select([a, b]), select([a, b]), select([a, b]))
 ...
 ```
+
+One thing to think about is when optimizing/finding, if we only ever compare the final register to our target, that might be overly restrictive. We could instead compare it to every register and use that as a signal we are on the right track. And if it is in the same register across all cases, then we should take that as a signal we can just return that register. So maybe there is a final register return selector that we use and instead of matching against the last register, we match against softmax(return) @ registers.
 
 ### diffusion and score-based generative models
 
