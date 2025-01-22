@@ -303,7 +303,7 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * as in original BERT, when using as a fixed length embedding (for indexing/retreival), just takes the first token
     * can also use multiple tokens for multi vector retreival
   * they say they use varlen attention & rope from flash attention, but I don't think there is varlen with rotary in fa. there is with alibi which is cool
-* [Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer](https://arxiv.org/abs/1701.06538)
+* [Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer](https://arxiv.org/abs/1701.06538) (MoE)
   * want more parameters, but without blowing up compute; so a single evaluation should use some subset of the total parameters
   * softplus is a smoothed relu (always positive unlike gelu)
   * similar to a glu, mul(gate(x), expert(x))
@@ -350,3 +350,28 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
           * each of these parts can be varied in size from 0 (omit) up to whatever
           * O is an output rescaling to get us back to dimension C
           * is this useful or known? todo write maybe a separate blog post about this, it seems like a cool way to blend attention+ff into one layer with adjustable ratio
+* [GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](https://arxiv.org/abs/2305.13245)
+  * subsumes MQA (multi query attention) where key and value matrices are shared between heads
+  * splits heads into k groups and shares key and value matrices between them
+* [DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models](https://arxiv.org/abs/2401.06066)
+  * MoE but with two changes:
+    * increase number of experts (and decrease their hidden dim for constat param)
+      * reasoning they give is more combinatorial paths, for top-2 with 16 experts you get choose(16, 2) = 120, at 4x you get choose(64, 8) = 4.4e9
+    * and denote k of the experts as shared (always routed to) for "common knowledge"
+  * similar (at a glance) expert balance and device balance loss for the router
+  * they use this with an attention block as their arch
+* [DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model](https://arxiv.org/abs/2405.04434)
+  * uses above DeepSeekMoE as ff layer
+  * reminder that kv cache in vanilla attention MHA caches the keys and values for each layer so 2CLT in total for C channel L layers T sequence length (and really C = Hh for H heads and h head dim)
+  * introduces multi-head latent attenion (MLA): "low rank joint compression for keys and values to reduce KV cache"
+    * down project (compress) tokens from C to c channels
+      * for kv, we share a compressed vector and use two up-projection matrices to produce our normal keys and values
+      * queries are also down and up projected
+    * reduces kv cache to cLT for compressed dim c L layers T sequence length
+    * decoupled rope: (fuzzy but this is my understanding)
+      * choose a dim R for number of channels that will get positional encoding
+      * downproject the compressed query from c to R and apply rope
+      * downproject the original token from C to R and apply rope
+      * concat these to the the queries and keys
+        * so positional only affects R of the channels I think?
+
