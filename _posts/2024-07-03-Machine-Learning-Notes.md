@@ -374,4 +374,14 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
       * downproject the original token from C to R and apply rope
       * concat these to the the queries and keys
         * so positional only affects R of the channels I think?
+* [Patch-Level Training for Large Language Models](https://arxiv.org/abs/2407.12665)
+  * to reduce training compute cost, first train a portion of dataset in patches, then in tokens
+  * patches of length K are the avg of the K tokens' embedding
+  * for a normal training sequence length L, patch training uses KL tokens to form K patches
+  * loss function is next patch prediction which uses the logits for the ith patch to predict the K tokens (unordered) of the next patch
+    * pushes the logits (after softmax) towards 1/K on the K tokens that are in the next patch
+  * they train a disjoint fraction of the dataset on patches and then on tokens
+    * is that optimal or just convenient to talk about fixed number of tokens trained on
+    * ah but then do say if doing multiple epochs, you'd do a fraction on patches then the rest on tokens
+  * is there a benefit to doing this in a multilevel fashion? Like first K=64, then 16, 4, 1?
 
