@@ -218,6 +218,39 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
   * A is the hippo matrix, B C step-size and scalar D are learned
   * stack one SSM per input dimension to get a layer from C -> C
 
+### questions (and some answers)
+
+* Q: In mha, the two equivalent views of O are that we concat the result of each head (T,h) to (T,C) then multiply by the (C,C) O matrix. The other is that we multiply each (T,h) head result by a (h,C) slice (horizontal/row slice) of O and then sum the results. Why is O even there? The paper says to give us proper dimensions but surely without it concat'ing gets us back to dim C anyways?
+  * A: channel mixing; if we just concat the results, the first h channels are just the result from head 1, the next h from head 2 etc. The equivalent view of just concat'ing is to multiply by the (h,C) slice of the identity matrix and summing which is the same as concat'ing
+
+```
+h=3 C=6
+r1 = [a b c]
+r2 = [d e f]
+concat(r1, r2) = [a b c d e f]
+
+          [[1 0 0 0 0 0]
+[a b c]  @ [0 1 0 0 0 0]
+           [0 0 1 0 0 0]
+------------------------------- +
+          [[0 0 0 1 0 0]
+[d e f]  @ [0 0 0 0 1 0]
+           [0 0 0 0 0 1]]
+=>
+
+[a b c 0 0 0]
+------------------------------- +
+[0 0 0 d e f]
+
+=>
+
+[a b c d e f]
+```
+
+* Q: In mha, our output for each token is always in the span of O, isn't that limiting?? Normally this then goes into a ffn but it just seems weird that no matter what complicated thing that attention does, we always "just" get a result in the span of O
+  * kinda true for all matrix based NN, but is a small wtf moment
+* Q: Imagine the trivial 0-layer transformer where we only embed then immediately unembed: UE, the prediction for each token will be nearly one-hot after softmax with random initialization (assuming weight tying) but not perfectly because we have V >> C. Training this model will try to approximate the bigram statistics (circuits paper) since we can only predict: given this token, what is the probability vector for the next token. I guess this makes sense and kinda already answers the question I wanted to write down (since initially I was thinking that the 0-layer transformer would predict the input token, but that isn't true, especially after training) but the nagging thought is something like: why doesn't the model have two vectors per token, one for the data and one for the prediction. Transformer combines those into a single vector right now. I guess I'm thinking something like: the prediction vector should be initialized to the uniform distribution (though as a vector that then gets unumebedded and softmax, we aren't guaranteed to have an x such that softmax(Ux) = [1/V 1/V ... 1/V] and even if you do it will change every opt step if you're updating E/U) as the uninformed prior, or perhaps as the bigram statistic vector as a slightly less naive prior (which again I'm now understanding is what it is already doing)
+
 # Links
 
 * [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
