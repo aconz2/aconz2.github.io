@@ -427,3 +427,10 @@ concat(r1, r2) = [a b c d e f]
     * as I was noting above in tokenformer, this is a noted thing; feed forward is like cross attention with fixed keys and values
 * [Augmenting Self-attention with Persistent Memory](https://arxiv.org/abs/1907.01470)
   * concats learned-but-static K and V to the keys and values of a self attention layer that makes it a hybrid attention ffn; what I rambeld about above in tokenformer
+* [DRew: Dynamically Rewired Message Passing with Delay](https://arxiv.org/abs/2305.08018) saw in [this vid](https://www.youtube.com/watch?v=m6xiIoizjQw)
+  * me: aren't mpnn's and transformers basically the same? You just use the adjacency matrix as the attention bias?
+  * anyways, the interesting idea that I thought might be interesting in the transformer context is this idea of having access to the hidden state from k steps ago
+    * idk how that would look right now but writing this down for later
+    * hand wavingly the more hops you do requires storing all the information you might need for later in your single token, so instead feed in the tokens from the k-previous layer (or k previous layers) so that you get more information
+    * pretty different in language modeling where the adjacency matrix is either fully connected or trill
+    * also gives me a silly idea for adding some kind of estimator for the token output based on the k previous tokens like exp avg or with momentum like adam or kalman or something
