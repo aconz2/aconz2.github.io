@@ -384,6 +384,8 @@ concat(r1, r2) = [a b c d e f]
           * each of these parts can be varied in size from 0 (omit) up to whatever
           * O is an output rescaling to get us back to dimension C
           * is this useful or known? todo write maybe a separate blog post about this, it seems like a cool way to blend attention+ff into one layer with adjustable ratio
+    * noted in the top-k attention paper and augmenting self-attention with persistent memory
+    * the concat idea is explored in augment self attention with persistent memory, though only with the dynamic/dynamic and static/static
 * [GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints](https://arxiv.org/abs/2305.13245)
   * subsumes MQA (multi query attention) where key and value matrices are shared between heads
   * splits heads into k groups and shares key and value matrices between them
@@ -418,4 +420,10 @@ concat(r1, r2) = [a b c d e f]
     * is that optimal or just convenient to talk about fixed number of tokens trained on
     * ah but then do say if doing multiple epochs, you'd do a fraction on patches then the rest on tokens
   * is there a benefit to doing this in a multilevel fashion? Like first K=64, then 16, 4, 1?
-
+* [Memory-efficient Transformers via Top-k Attention](https://arxiv.org/abs/2106.06899)
+  * softmax(topk(Q @@ K)) @ V
+    * interesting that the topk is before the softmax, which preserves the sum to 1
+  * feed-forward as attention
+    * as I was noting above in tokenformer, this is a noted thing; feed forward is like cross attention with fixed keys and values
+* [Augmenting Self-attention with Persistent Memory](https://arxiv.org/abs/1907.01470)
+  * concats learned-but-static K and V to the keys and values of a self attention layer that makes it a hybrid attention ffn; what I rambeld about above in tokenformer
