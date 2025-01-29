@@ -148,6 +148,8 @@ g = select(ops3)(select([a, b]), select([a, b]), select([a, b]))
 
 One thing to think about is when optimizing/finding, if we only ever compare the final register to our target, that might be overly restrictive. We could instead compare it to every register and use that as a signal we are on the right track. And if it is in the same register across all cases, then we should take that as a signal we can just return that register. So maybe there is a final register return selector that we use and instead of matching against the last register, we match against softmax(return) @ registers.
 
+For the learned operator network, perhaps we treat it as k1 tokens for the value and k2 tokens for the type and shape. If we fix at shape 3 arrays, then we might have k2=4 with `<type, shape2, shape1, shape0>` so that `1+1 -> <int8, 1, 1, 1>` and `[1, 2] + 1 -> <int8, 1, 1, 2>` or something like that. Not sure if that is just redundant with giving it k1 + k2 tokens for the type&value even if not explicitly separated like that.
+
 ### diffusion and score-based generative models
 
 From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
@@ -221,7 +223,7 @@ From [this video](https://www.youtube.com/watch?v=luCBXCErkCs) I preferred it to
 ### questions (and some answers)
 
 * Q: In mha, the two equivalent views of O are that we concat the result of each head (T,h) to (T,C) then multiply by the (C,C) O matrix. The other is that we multiply each (T,h) head result by a (h,C) slice (horizontal/row slice) of O and then sum the results. Why is O even there? The paper says to give us proper dimensions but surely without it concat'ing gets us back to dim C anyways?
-  * A: channel mixing; if we just concat the results, the first h channels are just the result from head 1, the next h from head 2 etc. The equivalent view of just concat'ing is to multiply by the (h,C) slice of the identity matrix and summing which is the same as concat'ing
+  * A: channel mixing; if we just concat the results, the first h channels are just the result from head 1, the next h from head 2 etc. The equivalent view of just concat'ing is to multiply by the (h,C) slice of the identity matrix and summing which is the same as concat'ing. And then when O is not the identity matrix, it can spread a mixture of the input channels to the output channels
 
 ```
 h=3 C=6
@@ -434,3 +436,24 @@ concat(r1, r2) = [a b c d e f]
     * hand wavingly the more hops you do requires storing all the information you might need for later in your single token, so instead feed in the tokens from the k-previous layer (or k previous layers) so that you get more information
     * pretty different in language modeling where the adjacency matrix is either fully connected or trill
     * also gives me a silly idea for adding some kind of estimator for the token output based on the k previous tokens like exp avg or with momentum like adam or kalman or something
+* [From Sparse to Soft Mixtures of Experts](https://arxiv.org/abs/2308.00951)
+  * this one confused me for a bit
+  * Sr is softmax over rows, Sc is softmax over columns
+  * Y = Sr(XK)f(Sc(XK)^T X)
+    * my K is their phi
+    * from the view of attention, we have Sr(XK) which is like cross attention between tokens X and static (but learnable) keys K
+    * K has shape (C, NP) though in the attention view it would be (NP, C) and we add a transpose
+    * N is the number of experts and P is the number of slots
+    * f is really fi and is a separate MLP (or whatever) and is run (independently) on each slot it gets
+      * ie expert 0 gets slots 0 and 1, expert 1 gets slots 2 and 3 etc
+    * Sr(XK) is the softmax over rows of attention and what they call the Combine matrix
+      * for each token, how much of each expert's outputs (each slot of each expert) should I get
+      * softmax over rows gives proportion based on how well that token matches each slot's K relative to the other slots
+    * Sc(XK)^T is the softmax over columns of attention and what they call the Dispatch matrix
+      * for each slot, how much of each token should I get
+      * softmax over cols gives proportion based on how well that slot's K matches each token relative to the other tokens
+    * Sc(XK)^T X does the combining of tokens into slots
+  * more experts more better, even down to one slot per expert
+  * so the routing is all based on a single vector, expert says "yo I prefer vectors in this cone"; what if you had multiple vectors to define a preferred span/volume/space?
+  * not causal because K learns how to merge all tokens into slots
+    * I think they're saying that even with a causal attention mask, you are then limiting which tokens each expert will get and so they'll be biased by their expert index
