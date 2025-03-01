@@ -154,6 +154,31 @@ Lately I've been thinking about what it might look like to not use a net at all.
 
 So we can assign a score to a point in the latent space (pre-projection and softmax), but we don't have a gradient so we'd have to do some gradient free optimization or approximate the gradient, though I don't think it is smooth at all so approximating isn't that appealing. If we approximate, I think the idea is to, for every parameter one at a time, increase it by epsilon and check the score. One detail here is whether we use the same random seed to sample the programs or not. If we do, then we know that we have an identical program up to that point and can reuse all the values (assuming we've saved them). Additionally, if our epsilon change doesn't result in a different random choice (per sample), then the whole program will be the same and we can reuse. Not using the same random seed seems weird because then we can't be sure whether the change in parameter changed the score or whether the seed changed the score (and really not whether, but how much blame we can put on each factor).
 
+Maybe there is a pseudo backprop possible here where we first score every register (or just the last/output register), and then working backwards, distribute some extra score to the ops that produced this register's inputs. An example is probably easier:
+
+```
+...
+c = select(ops1)(select([a, b]))
+d = select(ops1)(select([a, b]))
+f = select(ops2)(select([c, d]), select([c, d]))
+# one sampled program is
+c = ops1.f(a)
+d = ops1.g(b)
+f = ops2.h(c, d)
+# f gets some decent score matching our output
+# what went into producing f?
+#   - f: select(ops2)
+#   - f: select([c, d]) left
+#   - f: select([c, d]) right
+#   - c: select(ops1)
+#   - c: select([a, b])
+#   - d: select(ops1)
+#   - d: select([a, b])
+#   - and so on up the chain
+```
+
+and what we are really doing is giving a score to the one-hot distribution of the sampled program's selector vectors. Unlike gradient backprop where we end up with the gradient, this backprop just moves scores backwards, maybe with some falloff. To get an update to the selectors, we can take a score weighted average of the embedding vectors. One thing to note is that this assigns the same score to the operation selection and the register selection; it cannot distinguish between whether we did good because we chose the right operation or whether we chose the right register; I'm not sure it is meaningful to reward one over the other?
+
 ### diffusion and score-based generative models
 
 From [this amazing video](https://www.youtube.com/watch?v=wMmqCMwuM2Q)
