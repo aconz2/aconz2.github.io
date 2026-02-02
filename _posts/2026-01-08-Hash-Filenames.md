@@ -110,3 +110,9 @@ Also note that the validity check for decoding is very fast as shown in the `TOD
 My basic perf testing (i7-7600U and 5950x) shows that `encode` is as fast as a simd hex encode and `decode` is 3-4x faster than a simd hex decode (both omitted validity check). And the hex encode/decode is specialized to 32 bytes so a general stdlib version is probably slower.
 
 This scheme doesn't work in other scenarios like JSON or S3 or URLs (restic rest server uses `/blob/{hex digest}` for example). And it's not portable to other filesystems. And if you do any kind of shell scripting to list or delete these files you have to be extra careful to manage that properly (which is an ever present consideration that many people/programs ignore).
+
+Compared to base64, a 32 byte digest becomes a 44 byte filename and my basic testing shows this method runs in ~2 ns and the simdutf base64 encode runs in ~10 ns. This is slightly unfair because it is not a specialized base64 routine for the length. Decoding base64 is much slower at ~37 ns compared to ~2ns for this method. I think for hash paths, it is more frequent to encode to lookup if a path exists than it is to decode a path to get back the hash, though you do need that to run a verify.
+
+A repo with the code is [aconz2/hashpath-experiments](https://github.com/aconz2/hashpath-experiments)
+
+It would be nice to put a good name for this transform. My only thought so far is slash-null-out-of-line-escape or snoole. Idk
