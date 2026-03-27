@@ -104,9 +104,10 @@ void decode_37_simd(const char x[37], char ret[32]) {
 
     __m256i y = _mm256_loadu_si256((__m256i*) x);
 
+    const __m256i msb_mask = _mm256_set1_epi8(0x80);
     // expand_mask puts 0xff in each byte where the bit is 1
     // so mask off the lower 7 to just get the high bit
-    __m256i msb = _mm256_and_si256(expand_mask(bits), _mm256_set1_epi8(0x80));
+    __m256i msb = _mm256_and_si256(expand_mask(bits), msb_mask);
 
     // these two lines are the same but saves a constant load
     /*y = _mm256_and_si256(y, _mm256_set1_epi8(0x7f));*/
@@ -172,7 +173,7 @@ so we have 2**(16-k) / 2**16 == 2**(16-k-16) == 2**(-k) == divide by 2**k == rig
 # Alternate 40 byte format
 This then lead me to thinking of another 40 byte format which doesn't require (but still benefits from) SIMD or pdep/pext. Without SIMD or pdep/pext it is close to the SIMD speed at 2.4/2.1 ns for encode/decode vs 1.9/1.8 ns with SIMD.
 
-The idea is to grab the high bits of each byte (in groups of 8) and store them in the low bits of 8 additional bytes at the end. As before, we set the msb of every byte to ensure it doesn't become `\0` or `/`.
+The idea is to grab the high bits of each byte (in groups of 8) and store them in the low nibble of 8 additional bytes at the end. As before, we set the msb of every byte to ensure it doesn't become `\0` or `/`.
 
 ```c
 // this version grabs the msb of each 64 bit
