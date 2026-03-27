@@ -245,13 +245,16 @@ void decode_40_alt_simd(const char x[40], char ret[32]) {
     memcpy(&bits, x + 32, 8);
     __m256i vbits = _mm256_set1_epi64x(bits);
 
+    const __m256i msb_mask = _mm256_set1_epi8(0x80);
     const __m256i shifts = _mm256_set_epi64x(4, 5, 6, 7); // maybe use a cvtepu8_epi64?
     vbits = _mm256_sllv_epi64(vbits, shifts);
-    vbits = _mm256_and_si256(vbits, _mm256_set1_epi64x(0x8080808080808080));
+    vbits = _mm256_and_si256(vbits, msb_mask);
 
-    y = _mm256_and_si256(y, _mm256_set1_epi64x(0x7f7f7f7f7f7f7f7f));
+    y = _mm256_andnot_si256(msb_mask, y);
     y = _mm256_or_si256(y, vbits);
 
     _mm256_storeu_si256((__m256i*)ret, y);
 }
 ```
+
+Small update is that clang version 22.1.1 wasn't actually generating `vpandn` when using `_mm256_andnot_si256`, instead it would generate the constant `_mm256_set1_epi8(0xf)` and `and` with that. Crazy. Gcc would generate `vpandn`. In `decode_40_alt_simd` using `vpandn` saves us 1 whole 1uop! I forced it with some inline assembly and couldn't measure any difference.
