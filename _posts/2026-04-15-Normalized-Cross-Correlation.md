@@ -35,6 +35,12 @@ So next comes the google searching and a bit of LLM chat for a much better solut
 
 These two papers are a good reference, though I think my method is slightly different than either: [Fast Normalized Cross-Correlation](https://scribblethink.org/Work/nvisionInterface/nip.pdf) and [Template Matching using Fast Normalized Cross Correlation](https://isas.iar.kit.edu/pdf/SPIE01_BriechleHanebeck_CrossCorr.pdf).
 
+<style>
+math + math {
+  margin-top: 10px;
+}
+</style>
+
 <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
   <mrow>
     <mrow>
