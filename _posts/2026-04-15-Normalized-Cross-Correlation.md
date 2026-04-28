@@ -460,7 +460,6 @@ for (size_t needle_y = 0; needle_y < n_h; needle_y++) {
     for (size_t x = start; x < end; x++) {
         __m256i ref_row = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i*)&reference[(y + needle_y + i) * r_w + x]));
         __m256i s = _mm256_madd_epi16(needle_row, r); // 8 32 bit partial sums
-        __m256i s = _mm256_add_epi32(_mm256_add_epi32(nr[0], nr[1]), _mm256_add_epi32(nr[2], nr[3]));
         s = _mm256_add_epi32(s, _mm256_load_si256((__m256i*)a));
         _mm256_store_si256((__m256i*)a, s);
         a += 8;
@@ -481,7 +480,7 @@ A common width template I was using was also <= 8. Searching with 8 padding 0's 
 
 ```
 template is of width 6
-zero pad: tttttt00
+zero pad:  tttttt00
 duplicate: tttttt00tttttt00
 
 image row: 0123456789abcdefghijklmnopqrstuvwxyz...
@@ -497,7 +496,7 @@ image row: 0123456789abcdefghijklmnopqrstuvwxyz...
 8                                 tttttt00tttttt00
 ```
 
-So we do 8 shifts of the template. The 9th shift would overlap work we've already done, so we then skip ahead 16. The accumulator (remember each accumulator is really 4 32 bit values) layout looks like:
+So we do 7 shifts of the template. The 8th shift would overlap work we've already done, so we then skip ahead 16. The accumulator (remember each accumulator is really 4 32 bit values) layout looks like:
 
 ```
 0000,8888 1111,9999 2222,aaaa 3333,bbbb 4444,cccc 5555,dddd 6666,eeee 7777,ffff
